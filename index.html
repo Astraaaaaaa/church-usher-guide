@@ -861,7 +861,7 @@ function rRender(rows) {
     const color = R_MONTH_COLORS[month];
     const coords = monthCoords[month] || [];
     const coordHtml = R_SERVICES.map((svc, si) => coords[si]
-      ? `<span style="margin-right:16px"><b style="color:${color}">${svc.label}總召</b>　${coords[si]}</span>`
+      ? `<div><b style="color:${color}">${svc.label}總召</b>　${coords[si]}</div>`
       : ''
     ).filter(Boolean).join('');
 
