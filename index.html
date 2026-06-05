@@ -598,10 +598,21 @@ function rGetPeople(row, slots) {
     .filter(Boolean);
 }
 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbynXDyXAO8dGLvzC6SnrBlyKFdrAAddgc4cmYjS0XxCwzNRg3-0PMns0BKI1k9HIz5G/exec';
+
+function gasLoad(tab) {
+  return new Promise((resolve, reject) => {
+    const cb = '_gas_' + Date.now();
+    const script = document.createElement('script');
+    window[cb] = (data) => { delete window[cb]; script.remove(); resolve(data); };
+    script.onerror = () => { delete window[cb]; script.remove(); reject(new Error('JSONP failed')); };
+    script.src = `${GAS_URL}?tab=${encodeURIComponent(tab)}&callback=${cb}`;
+    document.head.appendChild(script);
+  });
+}
+
 async function rLoadData() {
-  const res = await fetch('/.netlify/functions/sheet');
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
+  const data = await gasLoad('2026');
   return data.map(row => row.map(rCellVal));
 }
 
@@ -748,8 +759,7 @@ async function loadPrinciples() {
   if (principlesLoaded) return;
   principlesLoaded = true;
   try {
-    const res = await fetch('/.netlify/functions/sheet?tab=principles');
-    const rows = await res.json();
+    const rows = await gasLoad('principles');
     const hearts = rows.filter(r => r[0] === 'heart');
     document.getElementById('principle-grid-dyn').innerHTML = hearts.map(r => `
       <div class="principle-card">
@@ -781,8 +791,7 @@ async function loadQuickRef() {
   if (quickRefLoaded) return;
   quickRefLoaded = true;
   try {
-    const res = await fetch('/.netlify/functions/sheet?tab=quick-ref');
-    const rows = await res.json();
+    const rows = await gasLoad('quick-ref');
     const phrases = rows.filter(r => r[0] === 'phrase');
     document.getElementById('phrase-box-dyn').innerHTML =
       '<h3>💬 常用歡迎話術</h3>' +
@@ -897,8 +906,7 @@ async function loadService(svcId) {
   svcLoaded[svcId] = true;
   const tab = svcId === 'first' ? 'first-service' : 'second-service';
   try {
-    const res = await fetch(`/.netlify/functions/sheet?tab=${tab}`);
-    const raw = await res.json();
+    const raw = await gasLoad(tab);
     // Skip header row if present
     const rows = raw[0]?.[0]?.trim() === 'position' ? raw.slice(1) : raw;
     document.getElementById(`${svcId}-dyn`).innerHTML = renderServiceSection(rows, svcId);
