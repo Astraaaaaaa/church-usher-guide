@@ -10,44 +10,7 @@ if git diff --cached --quiet; then
 fi
 
 # 用 Python 分析 diff，產生描述改動內容的 commit message
-MSG=$(git -c core.quotepath=false diff --cached | PYTHONUTF8=1 python3 - << 'PYEOF'
-import sys, re
-sys.stdin.reconfigure(encoding='utf-8')
-sys.stdout.reconfigure(encoding='utf-8')
-
-diff = sys.stdin.read()
-added, removed = [], []
-
-for line in diff.splitlines():
-    if line.startswith('+') and not line.startswith('+++'):
-        text = re.sub(r'<[^>]+>', ' ', line[1:]).strip()
-        text = re.sub(r'\s+', ' ', text).strip()
-        if len(text) > 3:
-            added.append(text)
-    elif line.startswith('-') and not line.startswith('---'):
-        text = re.sub(r'<[^>]+>', ' ', line[1:]).strip()
-        text = re.sub(r'\s+', ' ', text).strip()
-        if len(text) > 3:
-            removed.append(text)
-
-parts = []
-if added:
-    preview = '；'.join(added[:3])
-    if len(preview) > 60:
-        preview = preview[:60] + '…'
-    parts.append(f'新增：{preview}')
-if removed:
-    preview = '；'.join(removed[:2])
-    if len(preview) > 40:
-        preview = preview[:40] + '…'
-    parts.append(f'移除：{preview}')
-
-if parts:
-    print('｜'.join(parts))
-else:
-    print('更新內容')
-PYEOF
-)
+MSG=$(git -c core.quotepath=false diff --cached | PYTHONUTF8=1 python3 "$(dirname "$0")/gen_msg.py")
 
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
 FULL_MSG="$MSG｜$TIMESTAMP"
