@@ -10,8 +10,9 @@ if git diff --cached --quiet; then
 fi
 
 # 用 Python 分析 diff，產生描述改動內容的 commit message
-MSG=$(git diff --cached | PYTHONUTF8=1 python3 - << 'PYEOF'
+MSG=$(git -c core.quotepath=false diff --cached | PYTHONUTF8=1 python3 - << 'PYEOF'
 import sys, re
+sys.stdin.reconfigure(encoding='utf-8')
 sys.stdout.reconfigure(encoding='utf-8')
 
 diff = sys.stdin.read()
