@@ -33,7 +33,7 @@
   /* ── HERO ── */
   .hero {
     background: var(--navy);
-    padding: 52px 24px 38px;
+    padding: 36px 24px 28px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -47,27 +47,27 @@
       rgba(91,155,213,0.04) 40px, rgba(91,155,213,0.04) 41px
     );
   }
-  .hero-logo { font-size: 11px; letter-spacing: 0.2em; color: var(--sky-light); margin-bottom: 14px; opacity: 0.8; }
+  .hero-logo { font-size: 12px; letter-spacing: 0.2em; color: var(--sky-light); margin-bottom: 14px; opacity: 0.8; }
   .hero-cross { font-size: 28px; margin-bottom: 10px; display: block; color: var(--gold-light); }
   .hero h1 {
     font-family: 'Noto Serif TC', serif;
-    font-size: clamp(20px, 5vw, 30px);
+    font-size: clamp(22px, 5vw, 32px);
     font-weight: 700;
     letter-spacing: 0.08em;
     color: var(--white);
     margin-bottom: 6px;
   }
-  .hero-sub { font-size: 13px; color: var(--sky-light); letter-spacing: 0.06em; margin-bottom: 24px; }
+  .hero-sub { font-size: 15px; color: var(--sky-light); letter-spacing: 0.06em; margin-bottom: 18px; }
   .verse-box {
     max-width: 560px;
     margin: 0 auto;
     border: 1px solid rgba(168,205,232,0.3);
     border-radius: 12px;
-    padding: 16px 22px;
+    padding: 12px 18px;
     background: rgba(91,155,213,0.08);
   }
   .verse-ref { font-size: 11px; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 7px; }
-  .verse-text { font-family: 'Noto Serif TC', serif; font-size: 14px; line-height: 1.85; color: var(--gold-light); }
+  .verse-text { font-family: 'Noto Serif TC', serif; font-size: 15px; line-height: 1.85; color: var(--gold-light); }
 
   /* ── NAV ── */
   .nav-wrapper {
@@ -84,8 +84,8 @@
   .nav-wrapper::-webkit-scrollbar { display: none; }
   .nav-tab {
     display: flex; align-items: center; gap: 6px;
-    padding: 14px 18px;
-    font-size: 13px;
+    padding: 13px 18px;
+    font-size: 15px;
     color: rgba(168,205,232,0.6);
     cursor: pointer;
     border: none; background: none;
@@ -98,43 +98,43 @@
   .nav-tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
 
   /* ── MAIN ── */
-  .main { max-width: 800px; margin: 0 auto; padding: 32px 16px 80px; }
+  .main { max-width: 800px; margin: 0 auto; padding: 26px 16px 70px; }
   .section { display: none; animation: fadeIn 0.28s ease; }
   .section.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
   /* ── SECTION HEADER ── */
   .section-header {
-    display: flex; align-items: center; gap: 14px;
-    margin-bottom: 26px;
-    padding-bottom: 14px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border);
   }
   .section-icon {
-    width: 44px; height: 44px;
-    border-radius: 12px;
+    width: 38px; height: 38px;
+    border-radius: 10px;
     background: var(--navy);
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px; flex-shrink: 0;
+    font-size: 18px; flex-shrink: 0;
   }
-  .section-title { font-family: 'Noto Serif TC', serif; font-size: 19px; font-weight: 700; color: var(--navy); }
-  .section-title-sub { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
+  .section-title { font-family: 'Noto Serif TC', serif; font-size: 22px; font-weight: 700; color: var(--navy); }
+  .section-title-sub { font-size: 14px; color: var(--text-soft); margin-top: 2px; }
 
   /* ── SERVICE BLOCK ── */
-  .service-block { background: var(--white); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+  .service-block { background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
   .service-block-header {
-    padding: 14px 18px;
+    padding: 13px 18px;
     display: flex; align-items: center; justify-content: space-between;
     cursor: pointer; transition: background 0.15s;
   }
   .service-block-header:hover { background: var(--sky-pale); }
   .service-block-title {
-    font-size: 14px; font-weight: 500; color: var(--text);
+    font-size: 16px; font-weight: 500; color: var(--text);
     display: flex; align-items: center; gap: 8px;
   }
   .service-badge {
-    font-size: 11px; font-weight: 500;
-    padding: 2px 9px; border-radius: 20px; letter-spacing: 0.04em;
+    font-size: 13px; font-weight: 500;
+    padding: 3px 9px; border-radius: 20px; letter-spacing: 0.03em;
   }
   .badge-s1 { background: var(--navy); color: var(--white); }
   .badge-s2 { background: var(--sky); color: var(--white); }
@@ -144,15 +144,15 @@
   .badge-elev  { background: rgba(123,94,167,0.1); color: #5B2880; border: 1px solid rgba(123,94,167,0.3); }
   .chevron { font-size: 11px; color: var(--text-soft); transition: transform 0.2s; }
   .service-block.open .chevron { transform: rotate(180deg); }
-  .service-block-body { display: none; padding: 4px 18px 16px; border-top: 1px solid var(--border); }
+  .service-block-body { display: none; padding: 6px 18px 16px; border-top: 1px solid var(--border); }
   .service-block.open .service-block-body { display: block; }
 
   /* ── INFO ROW ── */
-  .info-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .info-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
   .info-chip {
     display: flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-radius: 10px;
-    font-size: 13px; font-weight: 500;
+    padding: 9px 14px; border-radius: 8px;
+    font-size: 15px; font-weight: 500;
   }
   .chip-navy { background: var(--navy); color: var(--white); }
   .chip-sky  { background: var(--sky-pale); color: var(--navy-mid); border: 1px solid var(--sky-light); }
@@ -163,81 +163,83 @@
     border-left: 3px solid var(--navy);
     border-radius: 0 8px 8px 0;
     padding: 12px 16px;
-    font-size: 13px; color: var(--text-mid); line-height: 1.65;
-    margin-bottom: 18px;
+    font-size: 15px; color: var(--text-mid); line-height: 1.7;
+    margin-bottom: 16px;
   }
   .note-box strong { color: var(--navy); }
 
   /* ── ATTIRE ── */
-  .attire-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 2px; }
+  .attire-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 2px; }
   @media (max-width: 480px) { .attire-grid { grid-template-columns: 1fr; } }
-  .attire-card { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--warm-gray); }
-  .attire-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: var(--text-soft); margin-bottom: 5px; }
-  .attire-detail { color: var(--text-mid); font-size: 13.5px; line-height: 1.6; }
-  .attire-note  { font-size: 11.5px; color: var(--text-soft); margin-top: 3px; }
+  .attire-card { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--warm-gray); }
+  .attire-label { font-size: 13px; font-weight: 500; letter-spacing: 0.05em; color: var(--text-soft); margin-bottom: 5px; }
+  .attire-detail { color: var(--text-mid); font-size: 15.5px; line-height: 1.65; }
+  .attire-note  { font-size: 13.5px; color: var(--text-soft); margin-top: 3px; }
 
   /* ── RULE ITEMS ── */
   .rule-item {
-    display: flex; gap: 10px;
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
     padding: 10px 12px;
     border-radius: 8px;
-    font-size: 13.5px; line-height: 1.68; color: var(--text-mid);
+    font-size: 15.5px; line-height: 1.75; color: var(--text-mid);
     margin-bottom: 6px;
-    border-left: 3px solid transparent;
+    border-left: none;
     transition: background 0.12s;
   }
   .rule-item:hover { background: var(--warm-gray); }
-  .rule-inner { border-left-color: var(--green); }
-  .rule-outer { border-left-color: var(--sky); }
-  .rule-lift  { border-left-color: var(--gold); }
-  .rule-elev  { border-left-color: var(--purple); }
-  .rule-n { font-size: 11px; color: var(--text-soft); min-width: 18px; padding-top: 3px; }
+  .rule-inner { border-left-color: transparent; }
+  .rule-outer { border-left-color: transparent; }
+  .rule-lift  { border-left-color: transparent; }
+  .rule-elev  { border-left-color: transparent; }
+  .rule-n { font-size: 13px; color: var(--text-soft); padding-top: 3px; text-align: right; flex-shrink: 0; }
   .alert-rule {
     background: #FFF2F1;
     border: 1px solid rgba(192,57,43,0.25);
-    border-left: 3px solid var(--red) !important;
+    border-left: 3px solid var(--red);
   }
   .alert-rule .rule-n { color: var(--red); }
 
   /* ── PRINCIPLES TAB ── */
-  .principle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .principle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 18px; }
   .principle-card {
-    padding: 20px 16px; border-radius: 14px;
+    padding: 20px 16px; border-radius: 12px;
     border: 1px solid var(--border); background: var(--white); text-align: center;
     transition: transform 0.2s, box-shadow 0.2s;
   }
   .principle-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,58,92,0.1); }
-  .principle-emoji { font-size: 28px; margin-bottom: 10px; display: block; }
-  .principle-title { font-family: 'Noto Serif TC', serif; font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
-  .principle-desc { font-size: 12.5px; color: var(--text-soft); line-height: 1.65; }
+  .principle-emoji { font-size: 26px; margin-bottom: 8px; display: block; }
+  .principle-title { font-family: 'Noto Serif TC', serif; font-size: 17px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+  .principle-desc { font-size: 14.5px; color: var(--text-soft); line-height: 1.65; }
 
   /* ── ROLE OVERVIEW GRID ── */
-  .roles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .roles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   @media (max-width: 500px) { .roles-grid { grid-template-columns: 1fr; } }
-  .role-ov-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-  .role-ov-title { font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .role-ov-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .role-ov-title { font-size: 15px; font-weight: 500; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
   .role-ov-list { list-style: none; }
-  .role-ov-list li { font-size: 12.5px; color: var(--text-soft); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; line-height: 1.5; }
+  .role-ov-list li { font-size: 14.5px; color: var(--text-soft); padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; line-height: 1.5; }
   .role-ov-list li:last-child { border-bottom: none; }
   .role-ov-list li::before { content: '·'; color: var(--sky); font-size: 16px; line-height: 1.2; }
 
   /* ── QUICK REF ── */
-  .qr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .qr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   @media (max-width: 500px) { .qr-grid { grid-template-columns: 1fr; } }
-  .qr-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-  .qr-title { font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .qr-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .qr-title { font-size: 15px; font-weight: 500; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
   .qr-list { list-style: none; }
-  .qr-list li { font-size: 12.5px; color: var(--text-soft); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; line-height: 1.5; }
+  .qr-list li { font-size: 14.5px; color: var(--text-soft); padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; line-height: 1.5; }
   .qr-list li:last-child { border-bottom: none; }
   .qr-list li::before { content: '·'; color: var(--gold); font-size: 16px; line-height: 1.2; }
-  .phrase-box { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-top: 16px; }
-  .phrase-box h3 { font-size: 12px; letter-spacing: 0.08em; color: var(--text-soft); margin-bottom: 12px; font-weight: 500; }
+  .phrase-box { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 12px; }
+  .phrase-box h3 { font-size: 13px; letter-spacing: 0.06em; color: var(--text-soft); margin-bottom: 8px; font-weight: 500; }
   .phrase-item {
     padding: 10px 14px;
     background: var(--warm-gray);
-    border-radius: 8px;
-    font-size: 13px; color: var(--text-mid); line-height: 1.65;
-    margin-bottom: 8px;
+    border-radius: 6px;
+    font-size: 15px; color: var(--text-mid); line-height: 1.7;
+    margin-bottom: 6px;
     border-left: 3px solid var(--gold);
     font-family: 'Noto Serif TC', serif;
   }
@@ -246,25 +248,25 @@
   /* ── LEADER TAB ── */
   .leader-intro {
     background: var(--navy);
-    border-radius: 14px;
-    padding: 20px 22px;
-    margin-bottom: 24px;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
     color: var(--sky-light);
-    font-size: 13.5px;
-    line-height: 1.8;
+    font-size: 15px;
+    line-height: 1.75;
   }
   .leader-intro strong { color: var(--gold-light); }
   .leader-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 16px;
-    margin-bottom: 28px;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
   }
   .leader-card {
     background: var(--white);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px 10px 14px;
+    border-radius: 12px;
+    padding: 12px 8px 10px;
     text-align: center;
     transition: transform 0.18s, box-shadow 0.18s;
   }
@@ -288,12 +290,12 @@
     font-size: 24px; color: var(--sky-light);
     border: 2px solid var(--sky-light);
   }
-  .leader-name { font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 4px; }
+  .leader-name { font-size: 15px; font-weight: 500; color: var(--navy); margin-bottom: 3px; }
   .leader-role { font-size: 11px; color: var(--text-soft); }
 
   .leader-section-title {
     font-family: 'Noto Serif TC', serif;
-    font-size: 15px; font-weight: 600; color: var(--navy);
+    font-size: 16px; font-weight: 600; color: var(--navy);
     margin: 24px 0 14px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
@@ -312,7 +314,7 @@
   }
   .contact-tip strong { color: var(--gold); }
 
-  .divider { height: 1px; background: var(--border); margin: 22px 0; }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
 
   /* ── FOOTER ── */
   footer {
@@ -330,12 +332,12 @@
 
 <!-- HERO -->
 <div class="hero">
-  <p class="hero-logo">基督教台灣貴格會合一堂 · TAIWAN HARMONY FRIENDS CHURCH</p>
+  <p class="hero-logo">基督教台灣貴格會合一堂</p>
   <span class="hero-cross">✝</span>
   <h1>主日崇拜招待事奉須知</h1>
-  <p class="hero-sub">彼此勉勵 ：）Sunday Service Usher Guide</p>
+  <p class="hero-sub">彼此勉勵 ：）</p>
   <div class="verse-box">
-    <p class="verse-ref">希伯來書 Hebrews 13:1–2</p>
+    <p class="verse-ref">希伯來書 13:1–2</p>
     <p class="verse-text">你們務要常存弟兄相愛的心。不可忘記用愛心接待客旅，<br>因為曾有接待客旅的，不知不覺就接待了天使。</p>
   </div>
 </div>
@@ -357,7 +359,7 @@
     <div class="section-icon">💛</div>
     <div>
       <div class="section-title">事奉基本原則</div>
-      <div class="section-title-sub">三個心 · Three Hearts of Service</div>
+      <div class="section-title-sub">三個心</div>
     </div>
   </div>
   <div class="principle-grid">
@@ -453,7 +455,7 @@
     <div class="section-icon" style="background:var(--gold);">👥</div>
     <div>
       <div class="section-title">主日招待總召</div>
-      <div class="section-title-sub">Sunday Usher Coordinators · 集合時由總召帶領禱告並確認崗位</div>
+      <div class="section-title-sub">集合時由總召帶領禱告並確認崗位</div>
     </div>
   </div>
   <div class="leader-intro">
@@ -485,17 +487,17 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-inner"><span class="rule-n">1</span>留意場內空位處，會眾前來時請主動上前引導入座；若可行，盡量優先補滿講台前面座位區。</div>
-      <div class="rule-item rule-inner"><span class="rule-n">2</span>若有輪椅需求，請協調<strong>最後一排</strong>的位置（左右兩邊皆可），拉出一張椅子讓輪椅入座。</div>
-      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span>若場內有干擾敬拜者（大聲說話、手機持續發出聲音、不斷起立走動），請通知<strong>總召&amp;鄰近安全同工</strong>處理。</div>
+      <div class="rule-item rule-inner"><span class="rule-n">1</span><div style="min-width:0;">留意場內空位處，會眾前來時請主動上前引導入座；若可行，盡量優先補滿講台前面座位區。</div></div>
+      <div class="rule-item rule-inner"><span class="rule-n">2</span><div style="min-width:0;">若有輪椅需求，請協調<strong>最後一排</strong>的位置（左右兩邊皆可），拉出一張椅子讓輪椅入座。</div></div>
+      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span><div style="min-width:0;">若場內有干擾敬拜者（大聲說話、手機持續發出聲音、不斷起立走動），請通知<strong>總召&amp;鄰近安全同工</strong>處理。</div></div>
     
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;font-weight:500;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:10px;">進階帶位技巧</div>
-        <div class="rule-item rule-inner"><span class="rule-n">4</span>帶位走位技巧：發現空位要帶會眾過去時，請站在會眾的「左前方」或「右前方」約一步距離，一邊側身一邊走，並用手勢（手掌向上，指尖朝向座位）引導。勿在後面用指的讓他們自己走，這樣會讓會眾感到尷尬或不知所措。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">5</span>填補座位優先順序（由內而外）：若發現一排中間還有空位，請溫柔且堅定地請靠走道的弟兄姊妹往裡面挪。口訣：「請您幫個忙，我們一起往裡面坐一格，把位置留給後面的弟兄姊妹，謝謝您！」若對方不方便移動（長輩或孕婦），則引導新進來的人跨進去，並同時向被跨過的人說聲抱歉。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">6</span>新朋友與常客的座位心理學：面孔生疏的新朋友，盡量避免帶到「第一排正中央」或最顯眼的位置，以免造成壓力。新朋友最適合中後半段、靠近走道的位子（方便提早離場或上洗手間）。第一排及前排可優先留給核心同工、小組長或習慣坐前面的常客。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">7</span>遲到進場的黃金時機：敬拜開始後，當台上正在「講員宣告禱告」、「全體閉眼禱告」或「詩歌頌唱中」，請先請遲到者在門口稍等 1、2 分鐘。待一首詩歌結束、樂團彈奏過門音樂，或講員說「請坐」的轉換空檔，再迅速、安靜地帶人入座，將對聚會的打擾降到最低。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">8</span>眼神與肢體語言的默契：堂內不要低頭發呆或滑手機，隨時保持「獵鷹般的眼神」掃視全場。負責區域滿座時，用眼神或手勢（比「X」或搖頭）示意外招同工；若還有位置，用手指比出數字（如比「3」代表還有三個散位），讓後方同工能精準派人過來。</div>
+        <div class="rule-item rule-inner"><span class="rule-n">4</span><div style="min-width:0;">帶位走位技巧：發現空位要帶會眾過去時，請站在會眾的「左前方」或「右前方」約一步距離，一邊側身一邊走，並用手勢（手掌向上，指尖朝向座位）引導。勿在後面用指的讓他們自己走，這樣會讓會眾感到尷尬或不知所措。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">5</span><div style="min-width:0;">填補座位優先順序（由內而外）：若發現一排中間還有空位，請溫柔且堅定地請靠走道的弟兄姊妹往裡面挪。口訣：「請您幫個忙，我們一起往裡面坐一格，把位置留給後面的弟兄姊妹，謝謝您！」若對方不方便移動（長輩或孕婦），則引導新進來的人跨進去，並同時向被跨過的人說聲抱歉。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">6</span><div style="min-width:0;">新朋友與常客的座位心理學：面孔生疏的新朋友，盡量避免帶到「第一排正中央」或最顯眼的位置，以免造成壓力。新朋友最適合中後半段、靠近走道的位子（方便提早離場或上洗手間）。第一排及前排可優先留給核心同工、小組長或習慣坐前面的常客。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">7</span><div style="min-width:0;">遲到進場的黃金時機：敬拜開始後，當台上正在「講員宣告禱告」、「全體閉眼禱告」或「詩歌頌唱中」，請先請遲到者在門口稍等 1、2 分鐘。待一首詩歌結束、樂團彈奏過門音樂，或講員說「請坐」的轉換空檔，再迅速、安靜地帶人入座，將對聚會的打擾降到最低。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">8</span><div style="min-width:0;">眼神與肢體語言的默契：堂內不要低頭發呆或滑手機，隨時保持「獵鷹般的眼神」掃視全場。負責區域滿座時，用眼神或手勢（比「X」或搖頭）示意外招同工；若還有位置，用手指比出數字（如比「3」代表還有三個散位），讓後方同工能精準派人過來。</div></div>
       </div>
       </div>
   </div>
@@ -506,16 +508,16 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-outer"><span class="rule-n">1</span>微笑問候弟兄姊妹，並主動遞上週報。</div>
-      <div class="rule-item rule-outer"><span class="rule-n">2</span><strong>宣召開始時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至宣召結束再進入會堂。</div>
-      <div class="rule-item rule-outer"><span class="rule-n">3</span><strong>詩班獻詩時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至詩班獻詩結束再進入會堂。</div>
+      <div class="rule-item rule-outer"><span class="rule-n">1</span><div style="min-width:0;">微笑問候弟兄姊妹，並主動遞上週報。</div></div>
+      <div class="rule-item rule-outer"><span class="rule-n">2</span><div style="min-width:0;"><strong>宣召開始時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至宣召結束再進入會堂。</div></div>
+      <div class="rule-item rule-outer"><span class="rule-n">3</span><div style="min-width:0;"><strong>詩班獻詩時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至詩班獻詩結束再進入會堂。</div></div>
     
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;font-weight:500;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:10px;">進階迎賓技巧</div>
-        <div class="rule-item rule-outer"><span class="rule-n">4</span>熱情問候：站在大門口或報到處，雙手遞上週報，並微笑說：「平安！歡迎！」或「主內平安！」</div>
-        <div class="rule-item rule-outer"><span class="rule-n">5</span>新朋友識別：若遇到面孔生疏、在門口猶豫的朋友，請主動上前詢問：「平安！歡迎第一次來，今天需要幫您介紹環境嗎？」並引導至新朋友歡迎區或直接交給內招。</div>
-        <div class="rule-item rule-outer"><span class="rule-n">6</span>動線分流：若有推嬰兒車或帶幼童的家長，主動詢問並引導至兒主或親子室；若有行動不便的長輩，協助引導至電梯或無障礙座位區。</div>
-        <div class="rule-item rule-outer"><span class="rule-n">7</span>維持動線：避免和熟人站在門口過度長聊，以免阻擋入場動線。</div>
+        <div class="rule-item rule-outer"><span class="rule-n">4</span><div style="min-width:0;">熱情問候：站在大門口或報到處，雙手遞上週報，並微笑說：「平安！歡迎！」或「主內平安！」</div></div>
+        <div class="rule-item rule-outer"><span class="rule-n">5</span><div style="min-width:0;">新朋友識別：若遇到面孔生疏、在門口猶豫的朋友，請主動上前詢問：「平安！歡迎第一次來，今天需要幫您介紹環境嗎？」並引導至新朋友歡迎區或直接交給內招。</div></div>
+        <div class="rule-item rule-outer"><span class="rule-n">6</span><div style="min-width:0;">動線分流：若有推嬰兒車或帶幼童的家長，主動詢問並引導至兒主或親子室；若有行動不便的長輩，協助引導至電梯或無障礙座位區。</div></div>
+        <div class="rule-item rule-outer"><span class="rule-n">7</span><div style="min-width:0;">維持動線：避免和熟人站在門口過度長聊，以免阻擋入場動線。</div></div>
       </div>
       </div>
   </div>
@@ -526,9 +528,9 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-lift"><span class="rule-n">1</span>了解該主日敬拜場地與兒主活動場地，問候弟兄姊妹，協助按電梯。</div>
-      <div class="rule-item rule-lift"><span class="rule-n">2</span>協調電梯進入狀況，電梯快滿時，協助協調搭下一台電梯。</div>
-      <div class="rule-item rule-lift"><span class="rule-n">3</span>若接近敬拜時間仍有搭電梯人潮，可請年輕人走樓梯上 <strong>4F</strong>。</div>
+      <div class="rule-item rule-lift"><span class="rule-n">1</span><div style="min-width:0;">了解該主日敬拜場地與兒主活動場地，問候弟兄姊妹，協助按電梯。</div></div>
+      <div class="rule-item rule-lift"><span class="rule-n">2</span><div style="min-width:0;">協調電梯進入狀況，電梯快滿時，協助協調搭下一台電梯。</div></div>
+      <div class="rule-item rule-lift"><span class="rule-n">3</span><div style="min-width:0;">若接近敬拜時間仍有搭電梯人潮，可請年輕人走樓梯上 <strong>4F</strong>。</div></div>
     </div>
   </div>
 
@@ -538,8 +540,8 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-elev"><span class="rule-n">1</span>問候弟兄姊妹，主動詢問要到的樓層。</div>
-      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span>若遇特殊狀況者要到<strong>五樓</strong>，請格外留意，請弟兄姊妹協助陪同，勿讓其獨自進入五樓。</div>
+      <div class="rule-item rule-elev"><span class="rule-n">1</span><div style="min-width:0;">問候弟兄姊妹，主動詢問要到的樓層。</div></div>
+      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span><div style="min-width:0;">若遇特殊狀況者要到<strong>五樓</strong>，請格外留意，請弟兄姊妹協助陪同，勿讓其獨自進入五樓。</div></div>
     </div>
   </div>
 </section>
@@ -566,17 +568,17 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-inner"><span class="rule-n">1</span>留意場內空位處，會眾前來時請主動上前引導入座；若可行，盡量優先補滿講台前面座位區。</div>
-      <div class="rule-item rule-inner"><span class="rule-n">2</span>若有輪椅需求，請協調<strong>靠近門口</strong>的位置，拉出一張椅子讓輪椅入座。</div>
-      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span>若場內有干擾敬拜者（大聲說話、手機持續發出聲音、不斷起立走動），請通知<strong>總召&amp;鄰近安全同工</strong>處理。</div>
+      <div class="rule-item rule-inner"><span class="rule-n">1</span><div style="min-width:0;">留意場內空位處，會眾前來時請主動上前引導入座；若可行，盡量優先補滿講台前面座位區。</div></div>
+      <div class="rule-item rule-inner"><span class="rule-n">2</span><div style="min-width:0;">若有輪椅需求，請協調<strong>靠近門口</strong>的位置，拉出一張椅子讓輪椅入座。</div></div>
+      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span><div style="min-width:0;">若場內有干擾敬拜者（大聲說話、手機持續發出聲音、不斷起立走動），請通知<strong>總召&amp;鄰近安全同工</strong>處理。</div></div>
     
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;font-weight:500;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:10px;">進階帶位技巧</div>
-        <div class="rule-item rule-inner"><span class="rule-n">4</span>帶位走位技巧：發現空位要帶會眾過去時，請站在會眾的「左前方」或「右前方」約一步距離，一邊側身一邊走，並用手勢（手掌向上，指尖朝向座位）引導。勿在後面用指的讓他們自己走，這樣會讓會眾感到尷尬或不知所措。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">5</span>填補座位優先順序（由內而外）：若發現一排中間還有空位，請溫柔且堅定地請靠走道的弟兄姊妹往裡面挪。口訣：「請您幫個忙，我們一起往裡面坐一格，把位置留給後面的弟兄姊妹，謝謝您！」若對方不方便移動（長輩或孕婦），則引導新進來的人跨進去，並同時向被跨過的人說聲抱歉。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">6</span>新朋友與常客的座位心理學：面孔生疏的新朋友，盡量避免帶到「第一排正中央」或最顯眼的位置，以免造成壓力。新朋友最適合中後半段、靠近走道的位子（方便提早離場或上洗手間）。第一排及前排可優先留給核心同工、小組長或習慣坐前面的常客。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">7</span>遲到進場的黃金時機：敬拜開始後，當台上正在「講員宣告禱告」、「全體閉眼禱告」或「詩歌頌唱中」，請先請遲到者在門口稍等 1、2 分鐘。待一首詩歌結束、樂團彈奏過門音樂，或講員說「請坐」的轉換空檔，再迅速、安靜地帶人入座，將對聚會的打擾降到最低。</div>
-        <div class="rule-item rule-inner"><span class="rule-n">8</span>眼神與肢體語言的默契：堂內不要低頭發呆或滑手機，隨時保持「獵鷹般的眼神」掃視全場。負責區域滿座時，用眼神或手勢（比「X」或搖頭）示意外招同工；若還有位置，用手指比出數字（如比「3」代表還有三個散位），讓後方同工能精準派人過來。</div>
+        <div class="rule-item rule-inner"><span class="rule-n">4</span><div style="min-width:0;">帶位走位技巧：發現空位要帶會眾過去時，請站在會眾的「左前方」或「右前方」約一步距離，一邊側身一邊走，並用手勢（手掌向上，指尖朝向座位）引導。勿在後面用指的讓他們自己走，這樣會讓會眾感到尷尬或不知所措。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">5</span><div style="min-width:0;">填補座位優先順序（由內而外）：若發現一排中間還有空位，請溫柔且堅定地請靠走道的弟兄姊妹往裡面挪。口訣：「請您幫個忙，我們一起往裡面坐一格，把位置留給後面的弟兄姊妹，謝謝您！」若對方不方便移動（長輩或孕婦），則引導新進來的人跨進去，並同時向被跨過的人說聲抱歉。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">6</span><div style="min-width:0;">新朋友與常客的座位心理學：面孔生疏的新朋友，盡量避免帶到「第一排正中央」或最顯眼的位置，以免造成壓力。新朋友最適合中後半段、靠近走道的位子（方便提早離場或上洗手間）。第一排及前排可優先留給核心同工、小組長或習慣坐前面的常客。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">7</span><div style="min-width:0;">遲到進場的黃金時機：敬拜開始後，當台上正在「講員宣告禱告」、「全體閉眼禱告」或「詩歌頌唱中」，請先請遲到者在門口稍等 1、2 分鐘。待一首詩歌結束、樂團彈奏過門音樂，或講員說「請坐」的轉換空檔，再迅速、安靜地帶人入座，將對聚會的打擾降到最低。</div></div>
+        <div class="rule-item rule-inner"><span class="rule-n">8</span><div style="min-width:0;">眼神與肢體語言的默契：堂內不要低頭發呆或滑手機，隨時保持「獵鷹般的眼神」掃視全場。負責區域滿座時，用眼神或手勢（比「X」或搖頭）示意外招同工；若還有位置，用手指比出數字（如比「3」代表還有三個散位），讓後方同工能精準派人過來。</div></div>
       </div>
       </div>
   </div>
@@ -587,16 +589,16 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-outer"><span class="rule-n">1</span>微笑問候弟兄姊妹，並主動遞上週報。</div>
-      <div class="rule-item rule-outer"><span class="rule-n">2</span><strong>宣召開始時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至宣召結束再進入會堂。</div>
-      <div class="rule-item rule-outer"><span class="rule-n">3</span><strong>詩班獻詩時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至詩班獻詩結束再進入會堂。</div>
+      <div class="rule-item rule-outer"><span class="rule-n">1</span><div style="min-width:0;">微笑問候弟兄姊妹，並主動遞上週報。</div></div>
+      <div class="rule-item rule-outer"><span class="rule-n">2</span><div style="min-width:0;"><strong>宣召開始時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至宣召結束再進入會堂。</div></div>
+      <div class="rule-item rule-outer"><span class="rule-n">3</span><div style="min-width:0;"><strong>詩班獻詩時</strong>，請將兩側門關上，並請欲入場的弟兄姊妹稍等至詩班獻詩結束再進入會堂。</div></div>
     
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;font-weight:500;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:10px;">進階迎賓技巧</div>
-        <div class="rule-item rule-outer"><span class="rule-n">4</span>熱情問候：站在大門口或報到處，雙手遞上週報，並微笑說：「平安！歡迎！」或「主內平安！」</div>
-        <div class="rule-item rule-outer"><span class="rule-n">5</span>新朋友識別：若遇到面孔生疏、在門口猶豫的朋友，請主動上前詢問：「平安！歡迎第一次來，今天需要幫您介紹環境嗎？」並引導至新朋友歡迎區或直接交給內招。</div>
-        <div class="rule-item rule-outer"><span class="rule-n">6</span>動線分流：若有推嬰兒車或帶幼童的家長，主動詢問並引導至兒主或親子室；若有行動不便的長輩，協助引導至電梯或無障礙座位區。</div>
-        <div class="rule-item rule-outer"><span class="rule-n">7</span>維持動線：避免和熟人站在門口過度長聊，以免阻擋入場動線。</div>
+        <div class="rule-item rule-outer"><span class="rule-n">4</span><div style="min-width:0;">熱情問候：站在大門口或報到處，雙手遞上週報，並微笑說：「平安！歡迎！」或「主內平安！」</div></div>
+        <div class="rule-item rule-outer"><span class="rule-n">5</span><div style="min-width:0;">新朋友識別：若遇到面孔生疏、在門口猶豫的朋友，請主動上前詢問：「平安！歡迎第一次來，今天需要幫您介紹環境嗎？」並引導至新朋友歡迎區或直接交給內招。</div></div>
+        <div class="rule-item rule-outer"><span class="rule-n">6</span><div style="min-width:0;">動線分流：若有推嬰兒車或帶幼童的家長，主動詢問並引導至兒主或親子室；若有行動不便的長輩，協助引導至電梯或無障礙座位區。</div></div>
+        <div class="rule-item rule-outer"><span class="rule-n">7</span><div style="min-width:0;">維持動線：避免和熟人站在門口過度長聊，以免阻擋入場動線。</div></div>
       </div>
       </div>
   </div>
@@ -607,9 +609,9 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-lift"><span class="rule-n">1</span>了解該主日敬拜場地與兒主活動場地，問候弟兄姊妹，協助按電梯。</div>
-      <div class="rule-item rule-lift"><span class="rule-n">2</span>協調電梯進入狀況，電梯快滿時，協助協調搭下一台電梯。</div>
-      <div class="rule-item rule-lift"><span class="rule-n">3</span>若接近敬拜時間仍有搭電梯人潮，可請年輕人走樓梯到 <strong>B1</strong>。</div>
+      <div class="rule-item rule-lift"><span class="rule-n">1</span><div style="min-width:0;">了解該主日敬拜場地與兒主活動場地，問候弟兄姊妹，協助按電梯。</div></div>
+      <div class="rule-item rule-lift"><span class="rule-n">2</span><div style="min-width:0;">協調電梯進入狀況，電梯快滿時，協助協調搭下一台電梯。</div></div>
+      <div class="rule-item rule-lift"><span class="rule-n">3</span><div style="min-width:0;">若接近敬拜時間仍有搭電梯人潮，可請年輕人走樓梯到 <strong>B1</strong>。</div></div>
     </div>
   </div>
 
@@ -619,8 +621,8 @@
       <span class="chevron">▾</span>
     </div>
     <div class="service-block-body">
-      <div class="rule-item rule-elev"><span class="rule-n">1</span>問候弟兄姊妹，主動詢問要到的樓層。</div>
-      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span>若遇特殊狀況者要到<strong>五樓</strong>，請格外留意，請弟兄姊妹協助陪同，勿讓其獨自進入五樓。</div>
+      <div class="rule-item rule-elev"><span class="rule-n">1</span><div style="min-width:0;">問候弟兄姊妹，主動詢問要到的樓層。</div></div>
+      <div class="rule-item alert-rule" style="margin-top:10px;"><span class="rule-n">⚠</span><div style="min-width:0;">若遇特殊狀況者要到<strong>五樓</strong>，請格外留意，請弟兄姊妹協助陪同，勿讓其獨自進入五樓。</div></div>
     </div>
   </div>
 </section>
@@ -711,4 +713,3 @@ function toggleBlock(id) {
 </script>
 </body>
 </html>
-      
