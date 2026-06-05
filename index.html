@@ -806,11 +806,20 @@ async function rLoadData() {
   return data.map(row => row.map(rCellVal));
 }
 
+function lastSundayOfMonth(year, month) {
+  // last day of month, then step back to Sunday
+  const d = new Date(year, month, 0); // month is 1-indexed, so this gives last day
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
 function rRender(rows) {
-  const now = new Date();
-  const cm  = now.getMonth() + 1;
-  const nm  = cm === 12 ? 1 : cm + 1;
-  const targets = [cm, nm];
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const cm    = now.getMonth() + 1;
+  const lastSun = lastSundayOfMonth(now.getFullYear(), cm);
+  const startMonth = today > lastSun ? (cm === 12 ? 1 : cm + 1) : cm;
+  const targets = [startMonth, startMonth === 12 ? 1 : startMonth + 1];
 
   const monthCoords = {};
   for (const row of rows) {
@@ -833,6 +842,7 @@ function rRender(rows) {
     const month = parseInt(mm, 10);
     if (!targets.includes(month)) continue;
     const date = new Date(R_YEAR, month - 1, parseInt(dd, 10));
+    if (date < today) continue;
     entries.push({ row, date, month, label: raw });
   }
   entries.sort((a, b) => a.date - b.date);
