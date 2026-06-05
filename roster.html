@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>招待同工輪值表</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #f4f5f7;
+      color: #172b4d;
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #dfe1e6;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #172b4d;
+    }
+    .topbar .draft-badge {
+      background: #ff991f;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    .updated {
+      font-size: 12px;
+      color: #6b778c;
+    }
+
+    /* ── Main layout ── */
+    main {
+      padding: 24px;
+    }
+
+    .loading, .error-msg {
+      text-align: center;
+      padding: 60px 24px;
+      color: #6b778c;
+      font-size: 15px;
+    }
+    .error-msg { color: #de350b; }
+
+    /* ── Month section ── */
+    .month-section { margin-bottom: 40px; }
+    .month-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6b778c;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #dfe1e6;
+    }
+
+    /* ── Kanban row: horizontal scroll ── */
+    .month-cards {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .month-cards::-webkit-scrollbar { height: 6px; }
+    .month-cards::-webkit-scrollbar-thumb { background: #c1c7d0; border-radius: 3px; }
+
+    /* ── Date card ── */
+    .date-card {
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #dfe1e6;
+      min-width: 260px;
+      max-width: 280px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .date-header {
+      background: #0052cc;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Service block (第一堂 / 第二堂) ── */
+    .service-block {
+      padding: 10px 14px;
+    }
+    .service-block + .service-block {
+      border-top: 1px solid #f4f5f7;
+    }
+    .service-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .service-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0052cc;
+      letter-spacing: 0.5px;
+    }
+    .service-label.s2 { color: #00875a; }
+    .coordinator {
+      font-size: 11px;
+      color: #505f79;
+      background: #ebecf0;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    /* ── Position row ── */
+    .position-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+      align-items: flex-start;
+    }
+    .pos-label {
+      font-size: 11px;
+      color: #6b778c;
+      white-space: nowrap;
+      padding-top: 1px;
+      min-width: 72px;
+    }
+    .pos-people {
+      font-size: 12px;
+      color: #172b4d;
+      line-height: 1.5;
+    }
+
+    .coord-row {
+      font-size: 11px;
+      color: #172b4d;
+      font-weight: 600;
+      background: #f4f5f7;
+      border-radius: 4px;
+      padding: 4px 8px;
+      margin-bottom: 6px;
+    }
+    .no-data {
+      font-size: 11px;
+      color: #c1c7d0;
+      padding: 6px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <span style="font-size:18px;font-weight:700;">招待同工輪值表</span>
+    <span class="draft-badge">草稿</span>
+  </div>
+  <div id="updated" class="updated">載入中…</div>
+</div>
+
+<main id="kanban">
+  <div class="loading">讀取資料中，請稍候…</div>
+</main>
+
+<script>
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynXDyXAO8dGLvzC6SnrBlyKFdrAAddgc4cmYjS0XxCwzNRg3-0PMns0BKI1k9HIz5G/exec';
+  const YEAR = 2026;
+
+  // ── Column definitions ──────────────────────────────────────────────────
+  // Each slot: { col: nameColumn, s: statusColumn (optional) }
+  // If no status column, show person if name is non-empty.
+
+  // Monthly coordinator columns (A-G):
+  // col 0 = month name, col 1-3 = 第一堂 (4F/1F/親子), col 4-6 = 第二堂 (B1/1F/親子)
+  const MONTH_COORD_NUM = {
+    '一月':1,'二月':2,'三月':3,'四月':4,'五月':5,'六月':6,
+    '七月':7,'八月':8,'九月':9,'十月':10,'十一月':11,'十二月':12
+  };
+
+  const SERVICES = [
+    {
+      label: '第一堂', time: '08:10', colorClass: '',
+      coordCols:   [1, 2, 3],
+      coordLabels: ['4F', '1F', '親子'],
+      positions: [
+        { label: '1F 電梯前', slots: [{ col:9,  s:10 }] },
+        { label: '4F 内招',   slots: [{ col:11, s:12 }, { col:13, s:14 }, { col:15, s:16 }] },
+        { label: '4F 外招',   slots: [{ col:17, s:18 }, { col:19, s:20 }] },
+        { label: '4F 半樓',   slots: [{ col:21, s:22 }] },
+        { label: '預備招待',  slots: [{ col:23 },        { col:24 }] },
+        { label: '電梯 1',    slots: [{ col:25, s:26 }] },
+        { label: '電梯 2',    slots: [{ col:27, s:28 }] },
+      ]
+    },
+    {
+      label: '第二堂', time: '10:15', colorClass: 's2',
+      coordCols:   [4, 5, 6],
+      coordLabels: ['B1', '1F', '親子'],
+      positions: [
+        { label: '1F 電梯前', slots: [{ col:32, s:33 }] },
+        { label: 'B1 内招',   slots: [{ col:34, s:35 }, { col:36, s:37 }, { col:38, s:39 }] },
+        { label: 'B1 外招',   slots: [{ col:40, s:41 }, { col:42, s:43 }] },
+        { label: 'B1 夾層',   slots: [{ col:44, s:45 }] },
+        { label: '神學院',    slots: [{ col:46, s:47 }] },
+        { label: '預備招待',  slots: [{ col:48 },        { col:49 }] },
+        { label: '電梯 1',    slots: [{ col:50, s:51 }] },
+        { label: '電梯 2',    slots: [{ col:53, s:54 }] },
+        { label: '電梯 3',    slots: [{ col:55, s:56 }] },
+      ]
+    }
+  ];
+
+  // ── Data helpers ─────────────────────────────────────────────────────────
+  function cellVal(v) {
+    return v == null ? '' : String(v);
+  }
+
+  async function loadData() {
+    // Netlify function proxies the Apps Script — no CORS issues
+    const res = await fetch('/.netlify/functions/sheet');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data.map(row => row.map(cellVal));
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────
+  function confirmedPeople(row, slots) {
+    return slots
+      .filter(slot => {
+        const name = row[slot.col]?.trim();
+        if (!name) return false;
+        return slot.s === undefined ? true : row[slot.s]?.trim() === 'V';
+      })
+      .map(slot => row[slot.col].trim());
+  }
+
+  const MONTH_NAMES = ['','一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  const WEEKDAYS   = ['日','一','二','三','四','五','六'];
+
+  function fmtTimestamp(d) {
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} `
+         + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  function render(rows) {
+    const now   = new Date();
+    const cm    = now.getMonth() + 1;
+    const nm    = cm === 12 ? 1 : cm + 1;
+    const targets = [cm, nm];
+
+    // Build monthly coordinator lookup from cols A-G
+    const monthCoords = {};
+    for (const row of rows) {
+      const mn = MONTH_COORD_NUM[row[0]?.trim()];
+      if (!mn) continue;
+      monthCoords[mn] = SERVICES.map(svc =>
+        svc.coordCols.map((c, i) => {
+          const name = row[c]?.trim();
+          return name ? `${svc.coordLabels[i]}：${name}` : null;
+        }).filter(Boolean).join('　')
+      );
+    }
+
+    const DATE_RE = /^(\d{1,2})\/(\d{2})$/;
+    const entries = [];
+
+    for (const row of rows) {
+      const raw = row[8]?.trim();
+      if (!raw || !DATE_RE.test(raw)) continue;
+      const [, mm, dd] = raw.match(DATE_RE);
+      const month = parseInt(mm, 10);
+      if (!targets.includes(month)) continue;
+      const date = new Date(YEAR, month - 1, parseInt(dd, 10));
+      entries.push({ row, date, month, label: raw });
+    }
+
+    entries.sort((a, b) => a.date - b.date);
+
+    // Group by month
+    const groups = {};
+    for (const e of entries) {
+      (groups[e.month] ??= []).push(e);
+    }
+
+    const kanban = document.getElementById('kanban');
+    kanban.innerHTML = '';
+
+    let anyContent = false;
+
+    for (const month of targets) {
+      const list = groups[month];
+      if (!list?.length) continue;
+
+      const section = document.createElement('section');
+      section.className = 'month-section';
+      section.innerHTML = `<div class="month-title">${MONTH_NAMES[month]}</div>`;
+
+      const cards = document.createElement('div');
+      cards.className = 'month-cards';
+
+      for (const { row, date, month, label } of list) {
+        const card = document.createElement('div');
+        card.className = 'date-card';
+
+        const wd = WEEKDAYS[date.getDay()];
+        let html = `<div class="date-header">${label}（週${wd}）</div>`;
+        let hasContent = false;
+
+        for (let si = 0; si < SERVICES.length; si++) {
+          const svc = SERVICES[si];
+          const coordText = monthCoords[month]?.[si] || '';
+
+          const posRows = svc.positions
+            .map(p => ({ label: p.label, people: confirmedPeople(row, p.slots) }))
+            .filter(p => p.people.length);
+
+          if (!coordText && !posRows.length) continue;
+          hasContent = true;
+
+          html += `<div class="service-block">
+            <div class="service-header">
+              <span class="service-label ${svc.colorClass}">${svc.label}（${svc.time}）</span>
+            </div>
+            ${coordText ? `<div class="coord-row">總召　${coordText}</div>` : ''}`;
+
+          if (posRows.length) {
+            for (const p of posRows) {
+              html += `<div class="position-row">
+                <span class="pos-label">${p.label}</span>
+                <span class="pos-people">${p.people.join('、')}</span>
+              </div>`;
+            }
+          } else {
+            html += `<div class="no-data">尚無已確認同工</div>`;
+          }
+
+          html += `</div>`;
+        }
+
+        if (!hasContent) continue;
+        card.innerHTML = html;
+        cards.appendChild(card);
+        anyContent = true;
+      }
+
+      if (!cards.children.length) continue;
+      section.appendChild(cards);
+      kanban.appendChild(section);
+    }
+
+    if (!anyContent) {
+      kanban.innerHTML = '<div class="loading">本月及下月尚無排班資料。</div>';
+    }
+
+    document.getElementById('updated').textContent = '最後更新：' + fmtTimestamp(now);
+  }
+
+  // ── Load ─────────────────────────────────────────────────────────────────
+  async function load() {
+    try {
+      const rows = await loadData();
+      render(rows);
+    } catch(e) {
+      document.getElementById('kanban').innerHTML =
+        `<div class="error-msg">⚠️ 資料載入失敗：${e.message}<br>請確認已部署到 Netlify，或稍後重試。</div>`;
+      document.getElementById('updated').textContent = '載入失敗';
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

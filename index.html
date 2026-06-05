@@ -75,6 +75,7 @@
     border-bottom: 1px solid rgba(91,155,213,0.25);
     padding: 0 16px;
     display: flex;
+    justify-content: center;
     overflow-x: auto;
     scrollbar-width: none;
     position: sticky;
@@ -326,6 +327,29 @@
     line-height: 1.9;
   }
   .footer-church { font-family: 'Noto Serif TC', serif; font-size: 13px; color: var(--gold-light); margin-bottom: 4px; }
+
+  /* ── ROSTER TAB ── */
+  #roster { padding: 16px 0 40px; }
+  #roster .r-bar { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+  #roster .r-title { font-family:'Noto Serif TC',serif; font-size:18px; font-weight:700; color:var(--navy); }
+  #roster .r-draft { background:#ff991f; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:3px; margin-left:8px; vertical-align:middle; }
+  #roster .r-updated { font-size:12px; color:var(--text-soft); }
+  #roster .r-loading { text-align:center; padding:48px 0; color:var(--text-soft); font-size:15px; }
+  #roster .r-error { text-align:center; padding:48px 16px; color:var(--red); font-size:14px; line-height:1.7; }
+  #roster .r-month { margin-bottom:32px; }
+  #roster .r-month-title { font-size:13px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding-bottom:8px; border-bottom:2px solid var(--border); }
+  #roster .r-month-coords { font-size:13px; color:var(--text); margin-bottom:14px; line-height:1.8; }
+  #roster .r-cards { display:flex; flex-wrap:wrap; gap:14px; padding-bottom:8px; }
+  #roster .r-card { background:var(--white); border-radius:8px; border:1px solid var(--border); min-width:180px; max-width:220px; flex-shrink:0; overflow:hidden; box-shadow:0 1px 4px rgba(26,58,92,.06); }
+  #roster .r-card-hd { background:var(--navy); color:var(--white); padding:6px 12px; font-size:13px; font-weight:700; }
+  #roster .r-svc { padding:10px 14px; }
+  #roster .r-svc+.r-svc { border-top:1px solid var(--warm-gray); }
+  #roster .r-svc-lbl { font-size:11px; font-weight:700; color:var(--navy-mid); letter-spacing:.5px; margin-bottom:6px; }
+  #roster .r-svc-lbl.s2 { color:var(--green); }
+  #roster .r-coord { font-size:11px; font-weight:600; color:var(--text); background:var(--sky-pale); border-radius:4px; padding:4px 8px; margin-bottom:6px; }
+  #roster .r-row { display:flex; gap:8px; margin-bottom:4px; align-items:flex-start; }
+  #roster .r-pos { font-size:11px; color:var(--text-soft); white-space:nowrap; padding-top:1px; min-width:68px; }
+  #roster .r-ppl { font-size:12px; color:var(--text); line-height:1.5; }
 </style>
 </head>
 <body>
@@ -345,6 +369,7 @@
 <!-- NAV -->
 <nav class="nav-wrapper">
   <button class="nav-tab active" onclick="showTab('principles',this)"><span>💛</span> 事奉原則</button>
+  <button class="nav-tab" onclick="showTab('roster',this)"><span>📅</span> 輪值表</button>
   <button class="nav-tab" onclick="showTab('leaders',this)"><span>👥</span> 集合總召</button>
   <button class="nav-tab" onclick="showTab('first',this)"><span>☀️</span> 第一堂</button>
   <button class="nav-tab" onclick="showTab('second',this)"><span>🌤</span> 第二堂</button>
@@ -639,7 +664,7 @@
 
   <div class="info-row">
     <div class="info-chip chip-navy">☀️ 第一堂：08:15 · 4F 梯廳</div>
-    <div class="info-chip chip-sky">🌤 第二堂：10:15 · B1 招待桌</div>
+    <div class="info-chip chip-sky">🌤 第二堂：10:10 · B1 招待桌</div>
   </div>
 
   <div class="phrase-box">
@@ -693,6 +718,15 @@
   </div>
 </section>
 
+<!-- ── 輪值表 ── -->
+<section class="section" id="roster">
+  <div class="r-bar">
+    <div><span class="r-title">招待同工輪值表</span></div>
+    <div id="r-updated" class="r-updated">載入中…</div>
+  </div>
+  <div id="r-kanban"><div class="r-loading">讀取資料中，請稍候…</div></div>
+</section>
+
 </main>
 
 <footer>
@@ -706,9 +740,197 @@ function showTab(id, btn) {
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   btn.classList.add('active');
+  if (id === 'roster') loadRoster();
 }
 function toggleBlock(id) {
   document.getElementById(id).classList.toggle('open');
+}
+
+// ── Roster ──────────────────────────────────────────────────────────────────
+const R_YEAR = 2026;
+const R_MONTH_COORD_NUM = {
+  '一月':1,'二月':2,'三月':3,'四月':4,'五月':5,'六月':6,
+  '七月':7,'八月':8,'九月':9,'十月':10,'十一月':11,'十二月':12
+};
+const R_WEEKDAYS = ['日','一','二','三','四','五','六'];
+const R_MONTH_COLORS = [
+  '','#1a6b9e','#7b3fa0','#2a7a4a','#c45c00','#9e1a4e','#2d7d9a',
+  '#b86010','#1a4b8c','#7a5c00','#8c2a1a','#2a6e2a','#4a1a8c'
+];
+
+const R_SERVICES = [
+  {
+    label:'第一堂', time:'08:10', colorClass:'',
+    coordCols:[1,2,3], coordLabels:['4F','1F','親子'],
+    positions:[
+      { label:'1F 電梯前', slots:[{col:9,  s:10}] },
+      { label:'4F 内招',   slots:[{col:11, s:12},{col:13,s:14},{col:15,s:16}] },
+      { label:'4F 外招',   slots:[{col:17, s:18},{col:19,s:20}] },
+      { label:'4F 半樓',   slots:[{col:21, s:22}] },
+      { label:'預備招待',  slots:[{col:23},      {col:24}] },
+      { label:'電梯',      slots:[{col:25, s:26},{col:27, s:28}] },
+    ]
+  },
+  {
+    label:'第二堂', time:'10:10', colorClass:'s2',
+    coordCols:[4,5,6], coordLabels:['B1','1F','親子'],
+    positions:[
+      { label:'1F 電梯前', slots:[{col:32, s:33}] },
+      { label:'B1 内招',   slots:[{col:34, s:35},{col:36,s:37},{col:38,s:39}] },
+      { label:'B1 外招',   slots:[{col:40, s:41},{col:42,s:43}] },
+      { label:'B1 夾層',   slots:[{col:44, s:45}] },
+      { label:'神學院',    slots:[{col:46, s:47}] },
+      { label:'預備招待',  slots:[{col:48},      {col:49}] },
+      { label:'電梯',      slots:[{col:50, s:51},{col:53, s:54},{col:55, s:56}] },
+    ]
+  }
+];
+
+function rCellVal(v) { return v == null ? '' : String(v); }
+
+function rGetPeople(row, slots) {
+  return slots
+    .map(slot => {
+      const name = row[slot.col]?.trim();
+      if (!name) return null;
+      const confirmed = slot.s === undefined ? true : row[slot.s]?.trim() === 'V';
+      return { name, confirmed };
+    })
+    .filter(Boolean);
+}
+
+async function rLoadData() {
+  const res = await fetch('/.netlify/functions/sheet');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.map(row => row.map(rCellVal));
+}
+
+function rRender(rows) {
+  const now = new Date();
+  const cm  = now.getMonth() + 1;
+  const nm  = cm === 12 ? 1 : cm + 1;
+  const targets = [cm, nm];
+
+  const monthCoords = {};
+  for (const row of rows) {
+    const mn = R_MONTH_COORD_NUM[row[0]?.trim()];
+    if (!mn) continue;
+    monthCoords[mn] = R_SERVICES.map(svc =>
+      svc.coordCols.map((c,i) => {
+        const name = row[c]?.trim();
+        return name ? `${svc.coordLabels[i]}：${name}` : null;
+      }).filter(Boolean).join('　')
+    );
+  }
+
+  const DATE_RE = /^(\d{1,2})\/(\d{2})$/;
+  const entries = [];
+  for (const row of rows) {
+    const raw = row[8]?.trim();
+    if (!raw || !DATE_RE.test(raw)) continue;
+    const [, mm, dd] = raw.match(DATE_RE);
+    const month = parseInt(mm, 10);
+    if (!targets.includes(month)) continue;
+    const date = new Date(R_YEAR, month - 1, parseInt(dd, 10));
+    entries.push({ row, date, month, label: raw });
+  }
+  entries.sort((a, b) => a.date - b.date);
+
+  const groups = {};
+  for (const e of entries) (groups[e.month] ??= []).push(e);
+
+  const kanban = document.getElementById('r-kanban');
+  kanban.innerHTML = '';
+  let anyContent = false;
+
+  for (const month of targets) {
+    const list = groups[month];
+    if (!list?.length) continue;
+
+    const color = R_MONTH_COLORS[month];
+    const coords = monthCoords[month] || [];
+    const coordHtml = R_SERVICES.map((svc, si) => coords[si]
+      ? `<span style="margin-right:16px"><b style="color:${color}">${svc.label}總召</b>　${coords[si]}</span>`
+      : ''
+    ).filter(Boolean).join('');
+
+    const section = document.createElement('div');
+    section.className = 'r-month';
+    section.innerHTML = `
+      <div class="r-month-title" style="border-bottom-color:${color};color:${color}">
+        ${R_YEAR}/${String(month).padStart(2,'0')}
+      </div>
+      ${coordHtml ? `<div class="r-month-coords">${coordHtml}</div>` : ''}`;
+
+    const cards = document.createElement('div');
+    cards.className = 'r-cards';
+
+    for (const { row, date, month, label } of list) {
+      const card = document.createElement('div');
+      card.className = 'r-card';
+      const wd = R_WEEKDAYS[date.getDay()];
+      let html = `<div class="r-card-hd" style="background:${color}">${label}</div>`;
+      let hasContent = false;
+
+      for (let si = 0; si < R_SERVICES.length; si++) {
+        const svc = R_SERVICES[si];
+        const posRows = svc.positions
+          .map(p => ({ label: p.label, people: rGetPeople(row, p.slots) }))
+          .filter(p => p.people.length);
+
+        if (!posRows.length) continue;
+        hasContent = true;
+
+        html += `<div class="r-svc">
+          <div class="r-svc-lbl ${svc.colorClass}">${svc.label}（${svc.time}）</div>`;
+
+        for (const p of posRows) {
+          const nameHtml = p.people.map(x =>
+            x.confirmed ? x.name : `<span style="color:#c1c7d0">${x.name}</span>`
+          ).join('、');
+          html += `<div class="r-row">
+            <span class="r-pos">${p.label}</span>
+            <span class="r-ppl">${nameHtml}</span>
+          </div>`;
+        }
+        html += `</div>`;
+      }
+
+      if (!hasContent) continue;
+      card.innerHTML = html;
+      cards.appendChild(card);
+      anyContent = true;
+    }
+
+    if (!cards.children.length) continue;
+    section.appendChild(cards);
+    kanban.appendChild(section);
+  }
+
+  if (!anyContent) {
+    kanban.innerHTML = '<div class="r-loading">本月及下月尚無排班資料。</div>';
+  }
+
+  const d = now;
+  const ts = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} `
+           + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('r-updated').textContent = '最後更新：' + ts;
+}
+
+let rosterLoaded = false;
+async function loadRoster() {
+  if (rosterLoaded) return;
+  rosterLoaded = true;
+  try {
+    const rows = await rLoadData();
+    rRender(rows);
+  } catch(e) {
+    document.getElementById('r-kanban').innerHTML =
+      `<div class="r-error">⚠️ 資料載入失敗：${e.message}<br>請確認已部署到 Netlify，或稍後重試。</div>`;
+    document.getElementById('r-updated').textContent = '載入失敗';
+    rosterLoaded = false;
+  }
 }
 </script>
 </body>
