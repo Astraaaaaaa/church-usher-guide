@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """Local preview server — fetches Google Sheet CSV and serves as JSON"""
 
-import http.server, urllib.request, urllib.parse, csv, json, io, os, socketserver, time
+import http.server, urllib.request, urllib.parse, json, io, os, socketserver
 
 PORT = 8888
-SHEET_ID = "1CMaaFrrabbTXgVbBi9vFi_OWrbYbMvqkfTBKI9DTKww"
+GAS_URL = "https://script.google.com/macros/s/AKfycbynXDyXAO8dGLvzC6SnrBlyKFdrAAddgc4cmYjS0XxCwzNRg3-0PMns0BKI1k9HIz5G/exec"
 
-def csv_url(tab):
-    bust = int(time.time())
-    return (
-        f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
-        f"/gviz/tq?tqx=out:csv&sheet={urllib.parse.quote(tab)}&_cb={bust}"
-    )
+def gas_url(tab):
+    return f"{GAS_URL}?tab={urllib.parse.quote(tab)}"
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -25,11 +21,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def _serve_sheet(self, tab):
         try:
-            req = urllib.request.Request(csv_url(tab), headers={"User-Agent": "Mozilla/5.0"})
+            req = urllib.request.Request(gas_url(tab), headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=15) as r:
                 raw = r.read().decode("utf-8")
-            rows = list(csv.reader(io.StringIO(raw)))
-            out = json.dumps(rows).encode("utf-8")
+            out = raw.encode("utf-8")  # GAS already returns JSON
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
