@@ -1,7 +1,8 @@
-const CSV_URL =
-  'https://docs.google.com/spreadsheets/d/' +
-  '1CMaaFrrabbTXgVbBi9vFi_OWrbYbMvqkfTBKI9DTKww' +
-  '/gviz/tq?tqx=out:csv&sheet=2026';
+const SHEET_ID = '1CMaaFrrabbTXgVbBi9vFi_OWrbYbMvqkfTBKI9DTKww';
+
+function csvUrl(tab) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+}
 
 function parseCSV(text) {
   const rows = [];
@@ -20,9 +21,10 @@ function parseCSV(text) {
   return rows;
 }
 
-exports.handler = async function () {
+exports.handler = async function (event) {
+  const tab = event.queryStringParameters?.tab || '2026';
   try {
-    const res = await fetch(CSV_URL, { redirect: 'follow' });
+    const res = await fetch(csvUrl(tab), { redirect: 'follow' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     const rows = parseCSV(text);
