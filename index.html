@@ -828,7 +828,7 @@ function rRender(rows) {
     monthCoords[mn] = R_SERVICES.map(svc =>
       svc.coordCols.map((c,i) => {
         const name = row[c]?.trim();
-        return name ? `${svc.coordLabels[i]}：${name.replace(/姐/g, '')}` : null;
+        return name ? `${svc.coordLabels[i]}：${name.replace(/[姐哥]/g, '')}` : null;
       }).filter(Boolean).join('　')
     );
   }
