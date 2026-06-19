@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>主日招待事奉須知</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%AA%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -156,7 +157,7 @@
     padding: 9px 14px; border-radius: 8px;
     font-size: 15px; font-weight: 500;
   }
-  .chip-navy { background: var(--navy); color: var(--white); }
+  .chip-navy { background: rgba(26,58,92,0.08); color: var(--navy); border: 1px solid rgba(26,58,92,0.2); }
   .chip-sky  { background: var(--sky-pale); color: var(--navy-mid); border: 1px solid var(--sky-light); }
 
   /* ── NOTE BOX ── */
@@ -506,7 +507,7 @@
     <div class="info-chip chip-sky">🌤 第二堂：10:10 · B1 招待桌</div>
   </div>
 
-  <div class="phrase-box" id="phrase-box-dyn"><h3>💬 常用歡迎話術</h3><div style="color:#6b778c;font-size:13px;padding:8px 0">載入中…</div></div>
+  <div class="phrase-box" id="phrase-box-dyn"><h3>💬 常用歡迎句子</h3><div style="color:#6b778c;font-size:13px;padding:8px 0">載入中…</div></div>
 
   <div class="divider"></div>
 
@@ -585,7 +586,15 @@ const R_SERVICES = [
   }
 ];
 
-function rCellVal(v) { return v == null ? '' : String(v); }
+function rCellVal(v) {
+  if (v == null) return '';
+  // GAS getValues() serialises Date objects to ISO strings e.g. "2026-06-07T00:00:00.000Z"
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
+    const d = new Date(v);
+    return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}`;
+  }
+  return String(v);
+}
 
 function rGetPeople(row, slots) {
   return slots
@@ -612,7 +621,9 @@ function gasLoad(tab) {
 }
 
 async function rLoadData() {
-  const data = await gasLoad('2026');
+  const res = await fetch('/.netlify/functions/sheet?tab=2026');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
   return data.map(row => row.map(rCellVal));
 }
 
@@ -759,7 +770,8 @@ async function loadPrinciples() {
   if (principlesLoaded) return;
   principlesLoaded = true;
   try {
-    const rows = await gasLoad('principles');
+    const res = await fetch('/.netlify/functions/sheet?tab=principles');
+    const rows = await res.json();
     const hearts = rows.filter(r => r[0] === 'heart');
     document.getElementById('principle-grid-dyn').innerHTML = hearts.map(r => `
       <div class="principle-card">
@@ -791,10 +803,11 @@ async function loadQuickRef() {
   if (quickRefLoaded) return;
   quickRefLoaded = true;
   try {
-    const rows = await gasLoad('quick-ref');
+    const res = await fetch('/.netlify/functions/sheet?tab=quick-ref');
+    const rows = await res.json();
     const phrases = rows.filter(r => r[0] === 'phrase');
     document.getElementById('phrase-box-dyn').innerHTML =
-      '<h3>💬 常用歡迎話術</h3>' +
+      '<h3>💬 常用歡迎句子</h3>' +
       phrases.map(r => `<div class="phrase-item">「${r[1]}」</div>`).join('');
     const cardRows = rows.filter(r => r[0] !== 'phrase');
     const sections = {};
@@ -906,7 +919,8 @@ async function loadService(svcId) {
   svcLoaded[svcId] = true;
   const tab = svcId === 'first' ? 'first-service' : 'second-service';
   try {
-    const raw = await gasLoad(tab);
+    const res = await fetch(`/.netlify/functions/sheet?tab=${tab}`);
+    const raw = await res.json();
     // Skip header row if present
     const rows = raw[0]?.[0]?.trim() === 'position' ? raw.slice(1) : raw;
     document.getElementById(`${svcId}-dyn`).innerHTML = renderServiceSection(rows, svcId);
