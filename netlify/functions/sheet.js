@@ -11,7 +11,7 @@ exports.handler = async function (event) {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=60',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
       },
       body: JSON.stringify(rows),
     };
