@@ -563,29 +563,66 @@ const R_SERVICES = [
   {
     label:'第一堂', time:'08:10', colorClass:'',
     coordCols:[1,2,3], coordLabels:['4F','1F','親子'],
-    positions:[
-      { label:'1F 電梯前', slots:[{col:9,  s:10}] },
-      { label:'4F 内招',   slots:[{col:11, s:12},{col:13,s:14},{col:15,s:16}] },
-      { label:'4F 外招',   slots:[{col:17, s:18},{col:19,s:20}] },
-      { label:'4F 半樓',   slots:[{col:21, s:22}] },
-      { label:'預備招待',  slots:[{col:23},      {col:24}] },
-      { label:'電梯',      slots:[{col:25, s:26},{col:27, s:28}] },
+    positionDefs:[
+      { label:'1F 電梯前', headers:['1F 電梯前'] },
+      { label:'4F 内招',   headers:['4F内招','4F内招','4F内招'] },
+      { label:'4F 外招',   headers:['4F外招','4F外招'] },
+      { label:'4F 半樓',   headers:['4F半'] },
+      { label:'預備招待',  headers:['預備招待','預備招待'] },
+      { label:'電梯',      headers:['電梯1','電梯2'] },
     ]
   },
   {
     label:'第二堂', time:'10:10', colorClass:'s2',
     coordCols:[4,5,6], coordLabels:['B1','1F','親子'],
-    positions:[
-      { label:'1F 電梯前', slots:[{col:32, s:33}] },
-      { label:'B1 内招',   slots:[{col:34, s:35},{col:36,s:37},{col:38,s:39}] },
-      { label:'B1 外招',   slots:[{col:40, s:41},{col:42,s:43}] },
-      { label:'B1 夾層',   slots:[{col:44, s:45}] },
-      { label:'神學院',    slots:[{col:46, s:47}] },
-      { label:'預備招待',  slots:[{col:48},      {col:49}] },
-      { label:'電梯',      slots:[{col:50, s:51},{col:53, s:54},{col:55, s:56}] },
+    positionDefs:[
+      { label:'1F 電梯前', headers:['1F 電梯前'] },
+      { label:'B1 内招',   headers:['B1内招','B1内招','B1内招'] },
+      { label:'B1 外招',   headers:['B1外招','B1外招'] },
+      { label:'B1 夾層',   headers:['B1夾層內招'] },
+      { label:'神學院',    headers:['神學院往貨梯門口處'] },
+      { label:'預備招待',  headers:['預備招待','預備招待'] },
+      { label:'電梯',      headers:['電梯1','電梯2','電梯3'] },
     ]
   }
 ];
+
+// Find the header row: the row containing position column names
+function rFindHeaderRow(rows) {
+  const anchor = R_SERVICES[0].positionDefs[0].headers[0];
+  return rows.find(row => row.some(cell => cell?.trim() === anchor)) || null;
+}
+
+// Build resolved positions (with actual col indices) from header row for one service.
+// startFrom: skip columns before this index (so second service doesn't match first service's headers)
+function rResolvePositions(headerRow, svc, startFrom) {
+  // Build ordered list of non-empty header cells from startFrom onwards
+  const namedCols = [];
+  for (let i = startFrom; i < headerRow.length; i++) {
+    const name = headerRow[i]?.trim();
+    if (name) namedCols.push({ col: i, name });
+  }
+
+  let searchIdx = 0;
+  const positions = [];
+
+  for (const def of svc.positionDefs) {
+    const slots = [];
+    for (const hdr of def.headers) {
+      // Find next occurrence of this header in remaining namedCols
+      const idx = namedCols.findIndex((h, i) => i >= searchIdx && h.name === hdr);
+      if (idx === -1) continue;
+      const nameCol = namedCols[idx].col;
+      // If the immediately next column in the header row is blank → it's the status column
+      const nextCell = headerRow[nameCol + 1]?.trim() || '';
+      const statusCol = nextCell === '' ? nameCol + 1 : undefined;
+      slots.push({ col: nameCol, s: statusCol });
+      searchIdx = idx + 1;
+    }
+    if (slots.length) positions.push({ label: def.label, slots });
+  }
+  return positions;
+}
 
 function rCellVal(v) {
   if (v == null) return '';
@@ -643,11 +680,21 @@ function rRender(rows) {
   const startMonth = today > lastSun ? (cm === 12 ? 1 : cm + 1) : cm;
   const targets = [startMonth, startMonth === 12 ? 1 : startMonth + 1];
 
+  // Resolve position column indices dynamically from header row
+  const headerRow = rFindHeaderRow(rows);
+  let lastCol = 0;
+  const resolvedServices = R_SERVICES.map(svc => {
+    const positions = headerRow ? rResolvePositions(headerRow, svc, lastCol) : [];
+    const lastSlot = positions.at(-1)?.slots.at(-1);
+    if (lastSlot) lastCol = lastSlot.s !== undefined ? lastSlot.s + 1 : lastSlot.col + 1;
+    return { ...svc, positions };
+  });
+
   const monthCoords = {};
   for (const row of rows) {
     const mn = R_MONTH_COORD_NUM[row[0]?.trim()];
     if (!mn) continue;
-    monthCoords[mn] = R_SERVICES.map(svc =>
+    monthCoords[mn] = resolvedServices.map(svc =>
       svc.coordCols.map((c,i) => {
         const name = row[c]?.trim();
         return name ? `${svc.coordLabels[i]}：${name.replace(/[姐哥\s]/g, '')}` : null;
@@ -682,7 +729,7 @@ function rRender(rows) {
 
     const color = R_MONTH_COLORS[month];
     const coords = monthCoords[month] || [];
-    const coordHtml = R_SERVICES.map((svc, si) => coords[si]
+    const coordHtml = resolvedServices.map((svc, si) => coords[si]
       ? `<div><b style="color:${color}">${svc.label}總召</b>　${coords[si]}</div>`
       : ''
     ).filter(Boolean).join('');
@@ -705,8 +752,8 @@ function rRender(rows) {
       let html = `<div class="r-card-hd" style="background:${color}">${label}</div>`;
       let hasContent = false;
 
-      for (let si = 0; si < R_SERVICES.length; si++) {
-        const svc = R_SERVICES[si];
+      for (let si = 0; si < resolvedServices.length; si++) {
+        const svc = resolvedServices[si];
         const posRows = svc.positions
           .map(p => ({ label: p.label, people: rGetPeople(row, p.slots) }))
           .filter(p => p.people.length);
