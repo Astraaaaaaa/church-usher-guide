@@ -333,7 +333,7 @@
 
   /* ── ROSTER TAB ── */
   #roster { padding: 16px 0 40px; }
-  #roster .r-bar { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+  #roster .r-bar { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:0; }
   #roster .r-title { font-family:'Noto Serif TC',serif; font-size:18px; font-weight:700; color:var(--navy); }
   #roster .r-draft { background:#ff991f; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:3px; margin-left:8px; vertical-align:middle; }
   #roster .r-updated { font-size:12px; color:var(--text-soft); }
@@ -342,15 +342,32 @@
   @keyframes rSpin { to { transform: rotate(360deg); } }
   .r-spinner { display:flex; flex-direction:column; align-items:center; gap:10px; padding:40px 0; color:var(--text-soft); font-size:13px; }
   .r-spinner-ring { width:28px; height:28px; border:2.5px solid var(--border); border-top-color:var(--navy); border-radius:50%; animation:rSpin 0.75s linear infinite; }
+  /* ── Filter bar ── */
+  #r-filter-bar { padding:14px 16px 14px; display:none; }
+  .r-filter-row { display:flex; align-items:center; gap:10px; justify-content:flex-end; }
+  .r-filter-wrap { position:relative; max-width:280px; width:100%; }
+  .r-filter-wrap input { width:100%; padding:7px 32px 7px 14px; border:1px solid var(--border); border-radius:20px; font-size:13px; font-family:inherit; background:var(--white); color:var(--text); outline:none; transition:border-color .15s; }
+  .r-filter-wrap input:focus { border-color:var(--sky); }
+  .r-filter-wrap input::placeholder { color:var(--text-soft); }
+  #r-filter-clear { position:absolute; right:9px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:15px; color:var(--text-soft); padding:2px; line-height:1; display:none; }
+  #r-filter-clear:hover { color:var(--text); }
+  #r-filter-count { font-size:12px; color:var(--text-soft); white-space:nowrap; }
+  #r-kanban mark.r-highlight { background:#FFF176; color:inherit; border-radius:2px; padding:0 1px; font-style:normal; }
   #roster .r-month { margin-bottom:32px; }
   #roster .r-month-title { font-size:13px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding-bottom:8px; border-bottom:2px solid var(--border); }
   #roster .r-month-coords { font-size:13px; color:var(--text); margin-bottom:14px; line-height:1.8; }
   #roster .r-cards { display:flex; flex-wrap:wrap; gap:14px; padding-bottom:8px; }
   #roster .r-card { background:var(--white); border-radius:8px; border:1px solid var(--border); min-width:180px; max-width:220px; flex-shrink:0; overflow:hidden; box-shadow:0 1px 4px rgba(26,58,92,.06); }
-  #roster .r-card-hd { background:var(--navy); color:var(--white); padding:6px 12px; font-size:13px; font-weight:700; }
+  @media (max-width:520px) {
+    #roster .r-cards { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; margin:0 -16px; padding:0 16px 16px; gap:10px; }
+    #roster .r-card { min-width:260px; max-width:80vw; scroll-snap-align:start; flex-shrink:0; }
+  }
+  #roster .r-card-hd { background:var(--navy); color:var(--white); padding:6px 12px; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+  #roster .r-gcal-btn { background:var(--sky-pale); border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:10px; font-weight:700; padding:1px 8px; line-height:1.7; color:var(--navy); flex-shrink:0; letter-spacing:0.03em; white-space:nowrap; }
+  #roster .r-gcal-btn:hover { background:var(--border); }
   #roster .r-svc { padding:10px 14px; }
   #roster .r-svc+.r-svc { border-top:1px solid var(--warm-gray); }
-  #roster .r-svc-lbl { font-size:11px; font-weight:700; color:var(--navy-mid); letter-spacing:.5px; margin-bottom:6px; }
+  #roster .r-svc-lbl { font-size:11px; font-weight:700; color:var(--navy-mid); letter-spacing:.5px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
   #roster .r-svc-lbl.s2 { color:var(--green); }
   #roster .r-coord { font-size:11px; font-weight:600; color:var(--text); background:var(--sky-pale); border-radius:4px; padding:4px 8px; margin-bottom:6px; }
   #roster .r-row { display:flex; gap:8px; margin-bottom:4px; align-items:flex-start; }
@@ -524,6 +541,15 @@
     <div><span class="r-title">招待同工輪值表</span></div>
     <div id="r-updated" class="r-updated">載入中…</div>
   </div>
+  <div id="r-filter-bar">
+    <div class="r-filter-row">
+      <div class="r-filter-wrap">
+        <input id="r-filter-input" type="text" placeholder="🔍 輸入姓名查看" oninput="rFilterCards(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button id="r-filter-clear" onclick="rFilterClear()" aria-label="清除">×</button>
+      </div>
+      <span id="r-filter-count"></span>
+    </div>
+  </div>
   <div id="r-kanban"><div class="r-spinner"><div class="r-spinner-ring"></div>讀取資料中，請稍候…</div></div>
 </section>
 
@@ -656,6 +682,114 @@ function rFindHeaderRow(rows) {
   return rows.find(row => row.some(cell => cell?.trim() === R_POSITION_ANCHOR)) || null;
 }
 
+// ── Name Filter ──────────────────────────────────────────────────────────────
+function rHighlightEl(el, term) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let node;
+  while ((node = walker.nextNode())) nodes.push(node);
+  for (const textNode of nodes) {
+    if (!textNode.textContent.includes(term)) continue;
+    const parts = textNode.textContent.split(term);
+    const frag  = document.createDocumentFragment();
+    parts.forEach((part, i) => {
+      if (part) frag.appendChild(document.createTextNode(part));
+      if (i < parts.length - 1) {
+        const mark = document.createElement('mark');
+        mark.className = 'r-highlight';
+        mark.textContent = term;
+        frag.appendChild(mark);
+      }
+    });
+    textNode.parentNode.replaceChild(frag, textNode);
+  }
+}
+
+function rFilterCards(q) {
+  const term     = q.trim();
+  const clearBtn = document.getElementById('r-filter-clear');
+  const countEl  = document.getElementById('r-filter-count');
+  if (clearBtn) clearBtn.style.display = term ? '' : 'none';
+
+  const cards = document.querySelectorAll('#r-kanban .r-card');
+  let matched = 0;
+  cards.forEach(card => {
+    // Restore original HTML first (removes previous highlights)
+    if (card.dataset.origHtml) card.innerHTML = card.dataset.origHtml;
+
+    const names = card.dataset.names || '';
+    const show  = !term || names.includes(term);
+    card.style.display = show ? '' : 'none';
+    if (show) {
+      matched++;
+      if (term) card.querySelectorAll('.r-ppl').forEach(el => rHighlightEl(el, term));
+    }
+  });
+
+  // Hide month sections that have no visible cards
+  document.querySelectorAll('#r-kanban .r-month').forEach(sec => {
+    const hasVisible = [...sec.querySelectorAll('.r-card')].some(c => c.style.display !== 'none');
+    sec.style.display = hasVisible ? '' : 'none';
+  });
+
+  if (countEl) {
+    if (term) {
+      countEl.textContent = matched ? `找到 ${matched} 筆` : '找不到符合結果';
+      countEl.style.color = matched ? 'var(--text-soft)' : 'var(--red)';
+    } else {
+      countEl.textContent = '';
+    }
+  }
+}
+
+function rFilterClear() {
+  const input = document.getElementById('r-filter-input');
+  if (input) { input.value = ''; input.focus(); }
+  rFilterCards('');
+}
+
+// ── Google Calendar Export ────────────────────────────────────────────────────
+const rICSData = {}; // dateStr (YYYYMMDD) → { date, svcs: [{svcIdx, svc, posRows, coordStr}] }
+
+const R_SVC_META = [
+  { startTime:'081000', endTime:'091000', location:'4F梯廳' },
+  { startTime:'101000', endTime:'111000', location:'B1梯廳' },
+];
+
+function rOpenGCal(dateStr, svcIdx) {
+  const d = rICSData[dateStr];
+  if (!d) return;
+  const svcData = d.svcs.find(s => s.svcIdx === svcIdx);
+  if (!svcData) return;
+
+  const { date } = d;
+  const { svc, posRows, coordStr } = svcData;
+  const meta = R_SVC_META[svcIdx] || R_SVC_META[0];
+
+  const y  = date.getFullYear();
+  const mo = String(date.getMonth()+1).padStart(2,'0');
+  const da = String(date.getDate()).padStart(2,'0');
+  const dt = `${y}${mo}${da}`;
+
+  const descLines = [];
+  if (coordStr) descLines.push(`總召：${coordStr}`);
+  descLines.push('');
+  for (const p of posRows) {
+    descLines.push(`${p.label}：${p.people.map(x => x.name).join('、')}`);
+  }
+  const desc = descLines.join('\n').trim();
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `⛪ 主日第${svcIdx === 0 ? '一' : '二'}招待`,
+    dates: `${dt}T${meta.startTime}/${dt}T${meta.endTime}`,
+    details: desc,
+    location: meta.location,
+    ctz: 'Asia/Taipei',
+  });
+  window.open(`https://calendar.google.com/calendar/render?${params}`, '_blank');
+}
+
 function rCellVal(v) {
   if (v == null) return '';
   // GAS getValues() serialises Date objects to ISO strings e.g. "2026-06-07T00:00:00.000Z"
@@ -775,9 +909,10 @@ function rRender(rows) {
     for (const { row, date, month, label } of list) {
       const card = document.createElement('div');
       card.className = 'r-card';
-      const wd = R_WEEKDAYS[date.getDay()];
+      const dtStr = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}`;
       let html = `<div class="r-card-hd" style="background:${color}">${label}</div>`;
       let hasContent = false;
+      const icsSvcs = [];
 
       for (let si = 0; si < resolvedServices.length; si++) {
         const svc = resolvedServices[si];
@@ -787,9 +922,11 @@ function rRender(rows) {
 
         if (!posRows.length) continue;
         hasContent = true;
+        icsSvcs.push({ svcIdx: si, svc, posRows, coordStr: (coords[si] || '').replace(/　/g, ' ') });
 
+        const gcalLabel = si === 0 ? '一' : '二';
         html += `<div class="r-svc">
-          <div class="r-svc-lbl ${svc.colorClass}">${svc.label}（${svc.time}）</div>`;
+          <div class="r-svc-lbl ${svc.colorClass}"><span>${svc.label}（${svc.time}）</span><button class="r-gcal-btn" onclick="rOpenGCal('${dtStr}',${si})">加入 Google 日曆</button></div>`;
 
         for (const p of posRows) {
           const nameHtml = p.people.map(x =>
@@ -804,7 +941,10 @@ function rRender(rows) {
       }
 
       if (!hasContent) continue;
+      rICSData[dtStr] = { date, svcs: icsSvcs };
+      card.dataset.origHtml = html;
       card.innerHTML = html;
+      card.dataset.names = icsSvcs.flatMap(s => s.posRows.flatMap(p => p.people.map(x => x.name))).join(' ');
       cards.appendChild(card);
       anyContent = true;
     }
@@ -817,6 +957,13 @@ function rRender(rows) {
   if (!anyContent) {
     kanban.innerHTML = '<div class="r-loading">本月及下月尚無排班資料。</div>';
   }
+
+  // Show filter bar and reset any previous search
+  const filterBar = document.getElementById('r-filter-bar');
+  if (filterBar) filterBar.style.display = 'block';
+  const filterInput = document.getElementById('r-filter-input');
+  if (filterInput) filterInput.value = '';
+  rFilterCards('');
 
   const d = now;
   const ts = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} `
