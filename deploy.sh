@@ -13,7 +13,7 @@ fi
 MSG=$(git -c core.quotepath=false diff --cached | PYTHONUTF8=1 python3 "$(dirname "$0")/gen_msg.py")
 
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
-FULL_MSG="$MSG｜$TIMESTAMP"
+FULL_MSG="$MSG ($TIMESTAMP)"
 
 git commit -m "$FULL_MSG"
 git push
