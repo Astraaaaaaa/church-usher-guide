@@ -359,8 +359,8 @@
   #roster .r-cards { display:flex; flex-wrap:wrap; gap:14px; padding-bottom:8px; }
   #roster .r-card { background:var(--white); border-radius:8px; border:1px solid var(--border); min-width:180px; max-width:220px; flex-shrink:0; overflow:hidden; box-shadow:0 1px 4px rgba(26,58,92,.06); }
   @media (max-width:520px) {
-    #roster .r-cards { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; margin:0 -16px; padding:0 16px 16px; gap:10px; }
-    #roster .r-card { min-width:260px; max-width:80vw; scroll-snap-align:start; flex-shrink:0; }
+    #roster .r-cards { flex-direction:column; gap:10px; }
+    #roster .r-card { min-width:unset; max-width:100%; flex-shrink:1; }
   }
   #roster .r-card-hd { background:var(--navy); color:var(--white); padding:6px 12px; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:space-between; }
   #roster .r-gcal-btn { background:var(--sky-pale); border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:10px; font-weight:700; padding:1px 8px; line-height:1.7; color:var(--navy); flex-shrink:0; letter-spacing:0.03em; white-space:nowrap; }
