@@ -12,12 +12,17 @@ fi
 # 用 Python 分析 diff，產生描述改動內容的 commit message
 MSG=$(git -c core.quotepath=false diff --cached | PYTHONUTF8=1 python3 "$(dirname "$0")/gen_msg.py")
 
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
-FULL_MSG="$MSG ($TIMESTAMP)"
-
-git commit -m "$FULL_MSG"
-git push
-
-echo ""
-echo "🚀 已成功部署！"
-echo "📝 Commit：$FULL_MSG"
+if [[ "$1" == "--no-deploy" ]]; then
+  FULL_MSG="$MSG [skip netlify]"
+  git commit -m "$FULL_MSG"
+  git push
+  echo ""
+  echo "📤 已 push 到 GitHub（Netlify 不部署）"
+  echo "📝 Commit：$FULL_MSG"
+else
+  git commit -m "$MSG"
+  git push
+  echo ""
+  echo "🚀 已成功部署！"
+  echo "📝 Commit：$MSG"
+fi
