@@ -363,6 +363,7 @@
     #roster .r-card { min-width:unset; max-width:100%; flex-shrink:1; }
   }
   #roster .r-card-hd { background:var(--navy); color:var(--white); padding:6px 12px; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+  #roster .r-special-tag { font-size:10px; font-weight:600; background:rgba(255,255,255,0.22); border-radius:4px; padding:1px 7px; letter-spacing:0.04em; margin-left:6px; white-space:nowrap; }
   #roster .r-gcal-btn { background:var(--sky-pale); border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:10px; font-weight:700; padding:1px 8px; line-height:1.7; color:var(--navy); flex-shrink:0; letter-spacing:0.03em; white-space:nowrap; }
   #roster .r-gcal-btn:hover { background:var(--border); }
   #roster .r-svc { padding:10px 14px; }
@@ -910,7 +911,9 @@ function rRender(rows) {
       const card = document.createElement('div');
       card.className = 'r-card';
       const dtStr = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}`;
-      let html = `<div class="r-card-hd" style="background:${color}">${label}</div>`;
+      const specialTag = row[7]?.trim();
+      const tagHtml = specialTag ? `<span class="r-special-tag">${specialTag}</span>` : '';
+      let html = `<div class="r-card-hd" style="background:${color}"><span>${label}${tagHtml}</span></div>`;
       let hasContent = false;
       const icsSvcs = [];
 
