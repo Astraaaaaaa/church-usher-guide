@@ -947,7 +947,10 @@ function rRender(rows) {
       rICSData[dtStr] = { date, svcs: icsSvcs };
       card.dataset.origHtml = html;
       card.innerHTML = html;
-      card.dataset.names = icsSvcs.flatMap(s => s.posRows.flatMap(p => p.people.map(x => x.name))).join(' ');
+      card.dataset.names = [
+        ...icsSvcs.flatMap(s => s.posRows.flatMap(p => p.people.map(x => x.name))),
+        ...icsSvcs.map(s => s.coordStr).filter(Boolean),
+      ].join(' ');
       cards.appendChild(card);
       anyContent = true;
     }
