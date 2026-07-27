@@ -845,7 +845,8 @@ function rRender(rows) {
   const cm    = now.getMonth() + 1;
   const lastSun = lastSundayOfMonth(now.getFullYear(), cm);
   const startMonth = today > lastSun ? (cm === 12 ? 1 : cm + 1) : cm;
-  const targets = [startMonth, startMonth === 12 ? 1 : startMonth + 1];
+  const targets = [];
+  for (let m = startMonth; m <= 12; m++) targets.push(m);
 
   // Auto-parse position columns from header row
   const headerRow = rFindHeaderRow(rows);
