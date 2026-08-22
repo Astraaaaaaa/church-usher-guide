@@ -920,9 +920,15 @@ function rRender(rows) {
 
       for (let si = 0; si < resolvedServices.length; si++) {
         const svc = resolvedServices[si];
-        const posRows = svc.positions
-          .map(p => ({ label: p.label, people: rGetPeople(row, p.slots) }))
-          .filter(p => p.people.length);
+        // Build posRows, merging entries that share the same label
+        const posMap = new Map();
+        for (const p of svc.positions) {
+          const people = rGetPeople(row, p.slots);
+          if (!people.length) continue;
+          if (posMap.has(p.label)) posMap.get(p.label).push(...people);
+          else posMap.set(p.label, [...people]);
+        }
+        const posRows = [...posMap.entries()].map(([label, people]) => ({ label, people }));
 
         if (!posRows.length) continue;
         hasContent = true;
