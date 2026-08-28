@@ -1000,13 +1000,12 @@ function rRender(rows) {
   document.getElementById('r-updated').textContent = '最後更新：' + ts;
 
   // ── Build month jump bar ──────────────────────────────────────────────────
-  const kanban = document.getElementById('r-kanban');
-  const months = [...kanban.querySelectorAll('.r-month')].map(el => parseInt(el.id.replace('r-month-', '')));
+  const jumpMonths = [...kanban.querySelectorAll('.r-month')].map(el => parseInt(el.id.replace('r-month-', '')));
   const curMonth = new Date().getMonth() + 1;
   const jumpBar = document.createElement('div');
   jumpBar.id = 'r-month-jump';
   jumpBar.className = 'r-month-jump';
-  months.forEach(m => {
+  jumpMonths.forEach(m => {
     const btn = document.createElement('button');
     btn.className = 'r-jump-btn' + (m === curMonth ? ' active' : '');
     btn.textContent = m + '月';
