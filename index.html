@@ -365,7 +365,7 @@
   #r-filter-clear:hover { color:var(--text); }
   #r-filter-count { font-size:12px; color:var(--text-soft); white-space:nowrap; }
   #r-kanban mark.r-highlight { background:#FFF176; color:inherit; border-radius:2px; padding:0 1px; font-style:normal; }
-  .r-month-jump { display:flex; flex-wrap:wrap; gap:6px; padding:12px 0 16px; }
+  .r-month-jump { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
   .r-jump-btn { background:var(--warm-gray); border:1px solid var(--border); border-radius:16px; padding:4px 14px; font-size:12px; font-weight:600; color:var(--text); cursor:pointer; font-family:inherit; transition:background .15s,color .15s; white-space:nowrap; }
   .r-jump-btn:hover { background:var(--border); }
   .r-jump-btn.active { background:var(--navy); color:var(--white); border-color:var(--navy); }
@@ -555,6 +555,7 @@
 <section class="section active" id="roster">
   <div class="r-bar">
     <div><span class="r-title">招待同工輪值表</span></div>
+    <div id="r-month-jump" class="r-month-jump"></div>
     <div id="r-updated" class="r-updated">載入中…</div>
   </div>
   <div id="r-filter-bar">
@@ -998,9 +999,8 @@ function rRender(rows) {
   // ── Build month jump bar ──────────────────────────────────────────────────
   const jumpMonths = [...kanban.querySelectorAll('.r-month')].map(el => parseInt(el.id.replace('r-month-', '')));
   const curMonth = new Date().getMonth() + 1;
-  const jumpBar = document.createElement('div');
-  jumpBar.id = 'r-month-jump';
-  jumpBar.className = 'r-month-jump';
+  const jumpBar = document.getElementById('r-month-jump');
+  jumpBar.innerHTML = '';
   jumpMonths.forEach(m => {
     const btn = document.createElement('button');
     btn.className = 'r-jump-btn' + (m === curMonth ? ' active' : '');
@@ -1012,8 +1012,6 @@ function rRender(rows) {
     };
     jumpBar.appendChild(btn);
   });
-  // Insert jump bar before kanban
-  kanban.parentNode.insertBefore(jumpBar, kanban);
 }
 
 let rosterLoaded = false;
