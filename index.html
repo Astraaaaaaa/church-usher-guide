@@ -334,6 +334,17 @@
 
   /* ── ROSTER TAB ── */
   #roster { padding: 16px 0 40px; }
+  @media (min-width: 820px) {
+    #roster {
+      width: 100vw;
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);
+      padding-left: 40px;
+      padding-right: 40px;
+      box-sizing: border-box;
+    }
+  }
   #roster .r-bar { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:0; }
   #roster .r-title { font-family:'Noto Serif TC',serif; font-size:18px; font-weight:700; color:var(--navy); }
   #roster .r-draft { background:#ff991f; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:3px; margin-left:8px; vertical-align:middle; }
