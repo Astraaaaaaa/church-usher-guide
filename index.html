@@ -392,8 +392,8 @@
 
 <!-- NAV -->
 <nav class="nav-wrapper">
-  <button class="nav-tab active" onclick="showTab('principles',this)"><span>💛</span>事奉原則</button>
-  <button class="nav-tab" onclick="showTab('roster',this)"><span>📅</span>輪值表</button>
+  <button class="nav-tab" onclick="showTab('principles',this)"><span>💛</span>事奉原則</button>
+  <button class="nav-tab active" onclick="showTab('roster',this)"><span>📅</span>輪值表</button>
   <button class="nav-tab" onclick="showTab('leaders',this)"><span>👥</span>總召名單</button>
   <button class="nav-tab" onclick="showTab('first',this)"><span>☀️</span>第一堂</button>
   <button class="nav-tab" onclick="showTab('second',this)"><span>🌤</span>第二堂</button>
@@ -403,7 +403,7 @@
 <main class="main">
 
 <!-- ── 事奉原則 ── -->
-<section class="section active" id="principles">
+<section class="section" id="principles">
   <div class="section-header">
     <div class="section-icon">💛</div>
     <div>
@@ -537,7 +537,7 @@
 </section>
 
 <!-- ── 輪值表 ── -->
-<section class="section" id="roster">
+<section class="section active" id="roster">
   <div class="r-bar">
     <div><span class="r-title">招待同工輪值表</span></div>
     <div id="r-updated" class="r-updated">載入中…</div>
@@ -1058,8 +1058,8 @@ async function loadQuickRef() {
   }
 }
 
-// Auto-load default tab (principles)
-loadPrinciples();
+// Auto-load default tab (roster)
+loadRoster();
 // ── Service Sections (first / second) ────────────────────────────────────────
 const SVC_META = {
   '🙏': { ruleClass:'rule-inner', badgeClass:'badge-inner', badgeText:'堂內帶位' },
