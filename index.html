@@ -365,6 +365,10 @@
   #r-filter-clear:hover { color:var(--text); }
   #r-filter-count { font-size:12px; color:var(--text-soft); white-space:nowrap; }
   #r-kanban mark.r-highlight { background:#FFF176; color:inherit; border-radius:2px; padding:0 1px; font-style:normal; }
+  .r-month-jump { display:flex; flex-wrap:wrap; gap:6px; padding:12px 0 16px; }
+  .r-jump-btn { background:var(--warm-gray); border:1px solid var(--border); border-radius:16px; padding:4px 14px; font-size:12px; font-weight:600; color:var(--text); cursor:pointer; font-family:inherit; transition:background .15s,color .15s; white-space:nowrap; }
+  .r-jump-btn:hover { background:var(--border); }
+  .r-jump-btn.active { background:var(--navy); color:var(--white); border-color:var(--navy); }
   #roster .r-month { margin-bottom:32px; }
   #roster .r-month-title { font-size:13px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding-bottom:8px; border-bottom:2px solid var(--border); }
   #roster .r-month-coords { font-size:13px; color:var(--text); margin-bottom:14px; line-height:1.8; }
@@ -910,6 +914,7 @@ function rRender(rows) {
 
     const section = document.createElement('div');
     section.className = 'r-month';
+    section.id = `r-month-${month}`;
     section.innerHTML = `
       <div class="r-month-title" style="border-bottom-color:${color};color:${color}">
         ${R_YEAR}/${String(month).padStart(2,'0')}
@@ -993,6 +998,27 @@ function rRender(rows) {
   const ts = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} `
            + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   document.getElementById('r-updated').textContent = '最後更新：' + ts;
+
+  // ── Build month jump bar ──────────────────────────────────────────────────
+  const kanban = document.getElementById('r-kanban');
+  const months = [...kanban.querySelectorAll('.r-month')].map(el => parseInt(el.id.replace('r-month-', '')));
+  const curMonth = new Date().getMonth() + 1;
+  const jumpBar = document.createElement('div');
+  jumpBar.id = 'r-month-jump';
+  jumpBar.className = 'r-month-jump';
+  months.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'r-jump-btn' + (m === curMonth ? ' active' : '');
+    btn.textContent = m + '月';
+    btn.onclick = () => {
+      document.getElementById(`r-month-${m}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      jumpBar.querySelectorAll('.r-jump-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    jumpBar.appendChild(btn);
+  });
+  // Insert jump bar before kanban
+  kanban.parentNode.insertBefore(jumpBar, kanban);
 }
 
 let rosterLoaded = false;
