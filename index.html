@@ -892,10 +892,22 @@ function gasLoad(tab) {
   });
 }
 
-async function rLoadData() {
+const R_CACHE_KEY = 'roster_cache_2026';
+const R_CACHE_TTL = 5 * 60 * 1000; // 5 分鐘
+
+async function rLoadData(forceRefresh = false) {
+  if (!forceRefresh) {
+    try {
+      const cached = JSON.parse(localStorage.getItem(R_CACHE_KEY) || 'null');
+      if (cached && Date.now() - cached.ts < R_CACHE_TTL) {
+        return cached.rows.map(row => row.map(rCellVal));
+      }
+    } catch(e) {}
+  }
   const res = await fetch(`/.netlify/functions/sheet?tab=2026&_=${Date.now()}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
+  try { localStorage.setItem(R_CACHE_KEY, JSON.stringify({ ts: Date.now(), rows: data })); } catch(e) {}
   return data.map(row => row.map(rCellVal));
 }
 
@@ -1075,6 +1087,7 @@ function rRender(rows) {
 }
 
 function rReload() {
+  rForceRefresh = true;
   rosterLoaded = false;
   document.getElementById('r-kanban').innerHTML = '<div class="r-loading"><div class="r-spinner"><div class="r-spinner-ring"></div></div>重新載入中…</div>';
   document.getElementById('r-updated').textContent = '載入中…';
@@ -1086,11 +1099,13 @@ function rReload() {
 }
 
 let rosterLoaded = false;
+let rForceRefresh = false;
 async function loadRoster() {
   if (rosterLoaded) return;
   rosterLoaded = true;
   try {
-    const rows = await rLoadData();
+    const rows = await rLoadData(rForceRefresh);
+    rForceRefresh = false;
     rRender(rows);
   } catch(e) {
     document.getElementById('r-kanban').innerHTML =
