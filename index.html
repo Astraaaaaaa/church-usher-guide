@@ -71,6 +71,7 @@
   }
   .verse-ref { font-size: 11px; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 7px; }
   .verse-text { font-family: 'Noto Serif TC', serif; font-size: 15px; line-height: 1.85; color: var(--gold-light); }
+  .hero-views { margin-top: 12px; font-size: 11px; color: rgba(168,205,232,0.6); letter-spacing: 0.05em; }
 
   /* ── NAV ── */
   .nav-wrapper {
@@ -405,6 +406,7 @@
     <p class="verse-ref">希伯來書 13:1–2</p>
     <p class="verse-text">你們務要常存弟兄相愛的心。不可忘記用愛心接待客旅，<br>因為曾有接待客旅的，不知不覺就接待了天使。</p>
   </div>
+  <p class="hero-views" id="hero-views"></p>
 </div>
 
 <!-- NAV -->
@@ -1089,27 +1091,26 @@ function rRender(rows) {
 }
 
 async function rReload() {
-  // 立刻顯示快取（如果有）
   const btn = document.getElementById('r-refresh-btn');
   if (btn) btn.disabled = true;
   document.getElementById('r-updated').textContent = '更新中…';
+  document.getElementById('r-kanban').innerHTML = '<div class="r-loading"><div class="r-spinner"><div class="r-spinner-ring"></div></div>更新中…</div>';
+  const filterBar = document.getElementById('r-filter-bar');
+  if (filterBar) filterBar.style.display = 'none';
+  const jumpBar = document.getElementById('r-month-jump');
+  if (jumpBar) jumpBar.innerHTML = '';
+
+  rosterLoaded = false;
+  rForceRefresh = true;
 
   try {
-    const data = await rLoadData(true); // forceRefresh
-    const filterBar = document.getElementById('r-filter-bar');
-    if (filterBar) filterBar.style.display = 'none';
-    const jumpBar = document.getElementById('r-month-jump');
-    if (jumpBar) jumpBar.innerHTML = '';
-    rRender(data);
-
+    await loadRoster();
     const t = document.createElement('div');
     t.textContent = '✓ 資料已更新';
     t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a7a4a;color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:999;pointer-events:none';
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 2000);
-  } catch(e) {
-    document.getElementById('r-updated').textContent = '更新失敗';
-  }
+  } catch(e) {}
   if (btn) btn.disabled = false;
 }
 
@@ -1299,6 +1300,19 @@ async function loadService(svcId) {
 
 // Auto-load first service if it's the active tab on page load
 // (principles is default so this is just a safeguard)
+
+// ── 瀏覽計數器 ──────────────────────────────────────────────────────────────
+(async function initViewCounter() {
+  const el = document.getElementById('hero-views');
+  if (!el) return;
+  try {
+    const res = await fetch('https://api.counterapi.dev/v1/church-usher-guide-unity/views/up');
+    if (!res.ok) return;
+    const data = await res.json();
+    const count = data.count;
+    if (count) el.textContent = '👁 已有 ' + count.toLocaleString() + ' 次造訪';
+  } catch(e) {}
+})();
 
 </script>
 </body>
