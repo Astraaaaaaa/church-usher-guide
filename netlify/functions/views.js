@@ -1,4 +1,4 @@
-const { getStore } = require('@netlify/blobs');
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbynXDyXAO8dGLvzC6SnrBlyKFdrAAddgc4cmYjS0XxCwzNRg3-0PMns0BKI1k9HIz5G/exec';
 
 exports.handler = async function (event) {
   const headers = {
@@ -6,28 +6,12 @@ exports.handler = async function (event) {
     'Access-Control-Allow-Origin': '*',
     'Cache-Control': 'no-store',
   };
-
-  // 只在 GET 時才計數（避免爬蟲 POST 重複觸發）
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers };
-  }
-
   try {
-    const store = getStore('site-analytics');
-    const raw = await store.get('views');
-    const count = (parseInt(raw) || 0) + 1;
-    await store.set('views', String(count));
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ count }),
-    };
+    const res = await fetch(`${GAS_URL}?action=hit`, { redirect: 'follow' });
+    if (!res.ok) throw new Error(`GAS HTTP ${res.status}`);
+    const data = await res.json();
+    return { statusCode: 200, headers, body: JSON.stringify({ count: data.count }) };
   } catch (err) {
-    // Blobs 不可用時靜默失敗，不影響主頁
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ count: null, error: err.message }),
-    };
+    return { statusCode: 200, headers, body: JSON.stringify({ count: null }) };
   }
 };
