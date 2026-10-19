@@ -71,7 +71,6 @@
   }
   .verse-ref { font-size: 11px; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 7px; }
   .verse-text { font-family: 'Noto Serif TC', serif; font-size: 15px; line-height: 1.85; color: var(--gold-light); }
-  .hero-views { margin-top: 12px; font-size: 11px; color: rgba(168,205,232,0.6); letter-spacing: 0.05em; }
 
   /* ── NAV ── */
   .nav-wrapper {
@@ -406,7 +405,6 @@
     <p class="verse-ref">希伯來書 13:1–2</p>
     <p class="verse-text">你們務要常存弟兄相愛的心。不可忘記用愛心接待客旅，<br>因為曾有接待客旅的，不知不覺就接待了天使。</p>
   </div>
-  <p class="hero-views" id="hero-views"></p>
 </div>
 
 <!-- NAV -->
@@ -581,7 +579,10 @@
       <div id="r-month-jump" class="r-month-jump"></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div id="r-updated" class="r-updated">載入中…</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+        <div id="r-updated" class="r-updated">載入中…</div>
+        <div id="r-views" style="font-size:11px;color:var(--text-soft);"></div>
+      </div>
       <button id="r-refresh-btn" onclick="rReload()" title="重新載入" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text-soft);display:flex;align-items:center;gap:4px;">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         更新
@@ -1303,7 +1304,7 @@ async function loadService(svcId) {
 
 // ── 瀏覽計數器 ──────────────────────────────────────────────────────────────
 (async function initViewCounter() {
-  const el = document.getElementById('hero-views');
+  const el = document.getElementById('r-views');
   if (!el) return;
   try {
     const url = encodeURIComponent('https://github.com/Astraaaaaaa/church-usher-guide');
@@ -1311,7 +1312,7 @@ async function loadService(svcId) {
     if (!res.ok) return;
     const data = await res.json();
     const total = data.total_count || data.total;
-    if (total) el.textContent = '👁 已有 ' + Number(total).toLocaleString() + ' 次造訪';
+    if (total) el.textContent = '👁 ' + Number(total).toLocaleString() + ' 次造訪';
   } catch(e) {}
 })();
 
