@@ -904,7 +904,9 @@ async function rLoadData(forceRefresh = false) {
       }
     } catch(e) {}
   }
-  const res = await fetch(`/.netlify/functions/sheet?tab=2026&_=${Date.now()}`);
+  const bust = forceRefresh ? Math.floor(Date.now() / 60000) : '';
+  const url = bust ? `/.netlify/functions/sheet?tab=2026&_=${bust}` : '/.netlify/functions/sheet?tab=2026';
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   try { localStorage.setItem(R_CACHE_KEY, JSON.stringify({ ts: Date.now(), rows: data })); } catch(e) {}
@@ -1086,16 +1088,29 @@ function rRender(rows) {
   });
 }
 
-function rReload() {
-  rForceRefresh = true;
-  rosterLoaded = false;
-  document.getElementById('r-kanban').innerHTML = '<div class="r-loading"><div class="r-spinner"><div class="r-spinner-ring"></div></div>重新載入中…</div>';
-  document.getElementById('r-updated').textContent = '載入中…';
-  const filterBar = document.getElementById('r-filter-bar');
-  if (filterBar) filterBar.style.display = 'none';
-  const jumpBar = document.getElementById('r-month-jump');
-  if (jumpBar) jumpBar.innerHTML = '';
-  loadRoster();
+async function rReload() {
+  // 立刻顯示快取（如果有）
+  const btn = document.getElementById('r-refresh-btn');
+  if (btn) btn.disabled = true;
+  document.getElementById('r-updated').textContent = '更新中…';
+
+  try {
+    const data = await rLoadData(true); // forceRefresh
+    const filterBar = document.getElementById('r-filter-bar');
+    if (filterBar) filterBar.style.display = 'none';
+    const jumpBar = document.getElementById('r-month-jump');
+    if (jumpBar) jumpBar.innerHTML = '';
+    rRender(data);
+
+    const t = document.createElement('div');
+    t.textContent = '✓ 資料已更新';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a7a4a;color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:999;pointer-events:none';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2000);
+  } catch(e) {
+    document.getElementById('r-updated').textContent = '更新失敗';
+  }
+  if (btn) btn.disabled = false;
 }
 
 let rosterLoaded = false;
