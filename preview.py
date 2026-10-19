@@ -1,45 +1,51 @@
 #!/usr/bin/env python3
-"""Local preview server — proxies /.netlify/functions/sheet to GAS"""
+"""
+本地預覽伺服器：模擬 Netlify Function /.netlify/functions/views
+用法：python3 preview.py
+然後打開 http://localhost:8080
+"""
+import http.server, json, os, urllib.parse
 
-import http.server, urllib.request, urllib.parse, json, os, socketserver
+PORT = 8080
+BASE = os.path.dirname(os.path.abspath(__file__))
+COUNTER_FILE = os.path.join(BASE, '.preview_views_count')
 
-PORT = 8888
-GAS_URL = "https://script.google.com/macros/s/AKfycbynXDyXAO8dGLvzC6SnrBlyKFdrAAddgc4cmYjS0XxCwzNRg3-0PMns0BKI1k9HIz5G/exec"
+def get_count():
+    try:
+        with open(COUNTER_FILE) as f:
+            return int(f.read().strip())
+    except:
+        return 0
+
+def inc_count():
+    c = get_count() + 1
+    with open(COUNTER_FILE, 'w') as f:
+        f.write(str(c))
+    return c
 
 class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *a, **kw):
+        super().__init__(*a, directory=BASE, **kw)
+
     def do_GET(self):
-        if self.path.startswith("/.netlify/functions/sheet"):
-            parsed = urllib.parse.urlparse(self.path)
-            params = urllib.parse.parse_qs(parsed.query)
-            tab = params.get("tab", ["2026"])[0]
-            self._proxy(tab)
+        path = urllib.parse.urlparse(self.path).path
+        if path == '/.netlify/functions/views':
+            count = inc_count()
+            body = json.dumps({'count': count}).encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(body)
+            print(f'  [views] count = {count}')
         else:
             super().do_GET()
 
-    def _proxy(self, tab):
-        try:
-            url = f"{GAS_URL}?tab={urllib.parse.quote(tab)}"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=15) as r:
-                raw = r.read().decode("utf-8")
-            out = raw.encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(out)
-        except Exception as e:
-            err = json.dumps({"error": str(e)}).encode("utf-8")
-            self.send_response(500)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(err)
-
     def log_message(self, fmt, *args):
-        pass
+        if '/.netlify/functions/' not in args[0]:
+            super().log_message(fmt, *args)
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-    print(f"✅  預覽伺服器啟動：http://localhost:{PORT}/index.html")
-    print("    按 Ctrl+C 停止")
+with http.server.HTTPServer(('', PORT), Handler) as httpd:
+    print(f'預覽伺服器啟動：http://localhost:{PORT}')
+    print('按 Ctrl+C 停止\n')
     httpd.serve_forever()
