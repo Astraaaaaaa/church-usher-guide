@@ -579,9 +579,9 @@
       <div id="r-month-jump" class="r-month-jump"></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
         <div id="r-updated" class="r-updated">載入中…</div>
-        <div id="r-views" style="font-size:11px;color:var(--text-soft);"></div>
+        <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAstraaaaaaa%2Fchurch-usher-guide&count_bg=%237A8E9E&title_bg=%23D4E3EF&icon=&title=%E9%80%A0%E8%A8%AA&edge_flat=true" alt="造訪次數" style="height:16px;opacity:0.85;" loading="lazy">
       </div>
       <button id="r-refresh-btn" onclick="rReload()" title="重新載入" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text-soft);display:flex;align-items:center;gap:4px;">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -1302,19 +1302,6 @@ async function loadService(svcId) {
 // Auto-load first service if it's the active tab on page load
 // (principles is default so this is just a safeguard)
 
-// ── 瀏覽計數器 ──────────────────────────────────────────────────────────────
-(async function initViewCounter() {
-  const el = document.getElementById('r-views');
-  if (!el) return;
-  try {
-    const url = encodeURIComponent('https://github.com/Astraaaaaaa/church-usher-guide');
-    const res = await fetch('https://hits.seeyoufarm.com/api/count/incr/badge.json?url=' + url);
-    if (!res.ok) return;
-    const data = await res.json();
-    const total = data.total_count || data.total;
-    if (total) el.textContent = '👁 ' + Number(total).toLocaleString() + ' 次造訪';
-  } catch(e) {}
-})();
 
 </script>
 </body>
