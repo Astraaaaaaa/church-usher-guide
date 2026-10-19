@@ -578,7 +578,13 @@
       <span class="r-title">招待同工輪值表</span>
       <div id="r-month-jump" class="r-month-jump"></div>
     </div>
-    <div id="r-updated" class="r-updated">載入中…</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div id="r-updated" class="r-updated">載入中…</div>
+      <button id="r-refresh-btn" onclick="rReload()" title="重新載入" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text-soft);display:flex;align-items:center;gap:4px;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        更新
+      </button>
+    </div>
   </div>
   <div id="r-filter-bar">
     <div class="r-filter-row">
@@ -1066,6 +1072,17 @@ function rRender(rows) {
     };
     jumpBar.appendChild(btn);
   });
+}
+
+function rReload() {
+  rosterLoaded = false;
+  document.getElementById('r-kanban').innerHTML = '<div class="r-loading"><div class="r-spinner"><div class="r-spinner-ring"></div></div>重新載入中…</div>';
+  document.getElementById('r-updated').textContent = '載入中…';
+  const filterBar = document.getElementById('r-filter-bar');
+  if (filterBar) filterBar.style.display = 'none';
+  const jumpBar = document.getElementById('r-month-jump');
+  if (jumpBar) jumpBar.innerHTML = '';
+  loadRoster();
 }
 
 let rosterLoaded = false;
