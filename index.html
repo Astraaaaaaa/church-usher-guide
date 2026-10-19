@@ -1306,11 +1306,12 @@ async function loadService(svcId) {
   const el = document.getElementById('hero-views');
   if (!el) return;
   try {
-    const res = await fetch('https://api.counterapi.dev/v1/church-usher-guide-unity/views/up');
+    const url = encodeURIComponent('https://github.com/Astraaaaaaa/church-usher-guide');
+    const res = await fetch('https://hits.seeyoufarm.com/api/count/incr/badge.json?url=' + url);
     if (!res.ok) return;
     const data = await res.json();
-    const count = data.count;
-    if (count) el.textContent = '👁 已有 ' + count.toLocaleString() + ' 次造訪';
+    const total = data.total_count || data.total;
+    if (total) el.textContent = '👁 已有 ' + Number(total).toLocaleString() + ' 次造訪';
   } catch(e) {}
 })();
 
