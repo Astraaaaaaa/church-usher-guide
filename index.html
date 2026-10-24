@@ -1299,6 +1299,18 @@ async function loadService(svcId) {
   }
 }
 
+// ── 10/25 歡慶主日：自動彈出 Modal ────────────────────────────────────────
+(function checkCelebrationPopup() {
+  const now = new Date();
+  const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  const y = tw.getFullYear(), m = tw.getMonth() + 1, d = tw.getDate();
+  // 只在 2026/10/25 當天自動彈出
+  if (y === 2026 && m === 10 && d === 25) {
+    const modal = document.getElementById('celebration-modal');
+    if (modal) modal.style.display = 'block';
+  }
+})();
+
 // Auto-load first service if it's the active tab on page load
 // (principles is default so this is just a safeguard)
 
