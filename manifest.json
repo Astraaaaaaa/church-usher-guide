@@ -1,6 +1,6 @@
 {
-  "name": "主日招待事奉須知",
-  "short_name": "招待同工",
+  "name": "招待網頁",
+  "short_name": "招待網頁",
   "description": "基督教台灣貴格會合一堂 招待同工輪值表",
   "start_url": "/",
   "display": "standalone",
