@@ -413,6 +413,40 @@
     <p class="verse-ref">希伯來書 13:1–2</p>
     <p class="verse-text">你們務要常存弟兄相愛的心。不可忘記用愛心接待客旅，<br>因為曾有接待客旅的，不知不覺就接待了天使。</p>
   </div>
+  <button id="pwa-hint-btn" onclick="document.getElementById('pwa-modal').style.display='flex'" style="display:none;margin-top:14px;background:rgba(91,155,213,0.15);border:1px solid rgba(91,155,213,0.3);border-radius:20px;padding:6px 16px;color:var(--sky-light);font-size:12px;cursor:pointer;font-family:inherit;align-items:center;gap:6px;">
+    <span>📲</span> 加入手機桌面
+  </button>
+</div>
+
+<!-- ── 加入桌面教學 Modal ── -->
+<div id="pwa-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;padding:20px 16px;display:none;align-items:flex-end;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fff;border-radius:16px 16px 12px 12px;width:100%;max-width:480px;margin:0 auto;overflow:hidden;">
+    <div style="background:#1A3A5C;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:700;font-size:15px;">📲 加入手機桌面</span>
+      <button onclick="document.getElementById('pwa-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:16px;">
+      <!-- iOS -->
+      <div style="background:#F2F4F6;border-radius:10px;padding:14px 16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:#1A3A5C;">🍎 iPhone / iPad（Safari）</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#3D546B;line-height:1.6;">
+          <div>① 點底部工具列的 <b>分享按鈕</b> <span style="font-size:16px;">⬆</span></div>
+          <div>② 向下滑找到 <b>「加入主畫面」</b></div>
+          <div>③ 右上角點 <b>「新增」</b> 即完成</div>
+        </div>
+      </div>
+      <!-- Android -->
+      <div style="background:#F2F4F6;border-radius:10px;padding:14px 16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:#1A3A5C;">🤖 Android（Chrome）</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#3D546B;line-height:1.6;">
+          <div>① 點右上角 <b>⋮ 選單</b></div>
+          <div>② 選 <b>「新增至主畫面」</b></div>
+          <div>③ 點 <b>「新增」</b> 即完成</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#7A8E9E;text-align:center;">加入後可像 App 一樣從桌面直接開啟，不需要記網址</div>
+    </div>
+  </div>
 </div>
 
 <!-- NAV -->
@@ -1325,6 +1359,16 @@ async function loadService(svcId) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+// ── 加入桌面提示按鈕（手機瀏覽器才顯示，PWA 模式隱藏）──────────────────
+(function initPWAHint() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (!isStandalone && isMobile) {
+    const btn = document.getElementById('pwa-hint-btn');
+    if (btn) btn.style.display = 'inline-flex';
+  }
+})();
 
 // ── 下拉重新整理（Pull-to-Refresh）────────────────────────────────────────
 (function initPullToRefresh() {
