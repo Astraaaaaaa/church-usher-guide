@@ -1,4 +1,4 @@
-const CACHE = 'usher-v1';
+const CACHE = 'usher-v2';
 const PRECACHE = ['/', '/index.html', '/icon-192.png', '/celebration-poster.png', '/celebration-plan.png', '/celebration-map.png'];
 
 self.addEventListener('install', e => {
