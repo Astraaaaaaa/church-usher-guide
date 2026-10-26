@@ -242,6 +242,10 @@
   @media (max-width: 500px) { .qr-grid { grid-template-columns: 1fr; } }
   .qr-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
   .qr-title { font-size: 15px; font-weight: 500; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .react-btn { font-size: 34px; background: none; border: none; width: 52px; height: 52px; cursor: pointer; transition: transform .15s, opacity .15s; display: inline-flex; align-items: center; justify-content: center; padding: 0; opacity: 1; }
+  .react-btn:active { transform: scale(0.82); }
+  .react-btn.selected { transform: scale(1.3); opacity: 1; }
+  #emoji-row.emoji-has-selection .react-btn:not(.selected) { opacity: 0.35; }
   .qr-list { list-style: none; }
   .qr-list li { font-size: 14.5px; color: var(--text-soft); padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; line-height: 1.5; }
   .qr-list li:last-child { border-bottom: none; }
@@ -596,6 +600,42 @@
   <div class="qr-grid" id="qr-grid-dyn"><div class="r-spinner"><div class="r-spinner-ring"></div>載入中…</div></div>
 </section>
 
+<!-- ── 公告 Modal ── -->
+<div id="announcement-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1001;padding:20px 16px;align-items:center;justify-content:center;" onclick="if(event.target===this)closeAnnouncement()">
+  <div style="background:#fff;border-radius:16px;overflow:hidden;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);position:relative;">
+    <button onclick="closeAnnouncement()" style="position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.35);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:10;">×</button>
+    <div style="overflow:hidden;">
+      <img src="announcement-sticker.png" style="width:100%;display:block;margin:-20px 0;" alt="招待貼紙更新公告">
+    </div>
+    <div id="announce-reaction-area" style="padding:14px 18px 18px;text-align:center;">
+      <p style="font-size:12px;color:#7A8E9E;margin:0 0 10px;">這次的更新如何？</p>
+      <div id="emoji-row" style="display:flex;justify-content:center;gap:12px;margin-bottom:12px;">
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;">
+          <button class="react-btn" data-emoji="🤩" onclick="selectEmoji('🤩')" title="哇！">🤩</button>
+          <span style="font-size:10px;color:#7A8E9E;">哇！</span>
+        </div>
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;">
+          <button class="react-btn" data-emoji="❤️" onclick="selectEmoji('❤️')" title="喜歡">❤️</button>
+          <span style="font-size:10px;color:#7A8E9E;">喜歡</span>
+        </div>
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;">
+          <button class="react-btn" data-emoji="👍" onclick="selectEmoji('👍')" title="實用">👍</button>
+          <span style="font-size:10px;color:#7A8E9E;">實用</span>
+        </div>
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;">
+          <button class="react-btn" data-emoji="🤔" onclick="selectEmoji('🤔')" title="有疑問">🤔</button>
+          <span style="font-size:10px;color:#7A8E9E;">有疑問</span>
+        </div>
+      </div>
+      <textarea id="reaction-text" placeholder="請給我們建議或回饋（選填）" maxlength="100"
+        style="width:100%;box-sizing:border-box;border:1px solid #D8E2EC;border-radius:10px;padding:8px 12px;font-size:13px;font-family:inherit;color:#3D546B;resize:none;height:62px;outline:none;transition:border-color .2s;"
+        onfocus="this.style.borderColor='#5B9BD5'" onblur="this.style.borderColor='#D8E2EC'"></textarea>
+      <button onclick="submitReaction()"
+        style="margin-top:10px;background:#1A3A5C;color:#fff;border:none;border-radius:20px;padding:8px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;">送出回饋</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── 歡慶主日 Modal ── -->
 <div id="celebration-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;overflow-y:auto;padding:20px 16px;" onclick="if(event.target===this)this.style.display='none'">
   <div style="max-width:520px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
@@ -610,13 +650,6 @@
 
 <!-- ── 輪值表 ── -->
 <section class="section active" id="roster">
-  <div id="celebration-banner" style="background:linear-gradient(135deg,#7a4f00,#c4890a);color:#fff;border-radius:10px;padding:0;margin-bottom:14px;display:flex;align-items:stretch;cursor:pointer;overflow:hidden;gap:0;" onclick="document.getElementById('celebration-modal').style.display='block'">
-    <img src="celebration-poster.png" style="width:64px;object-fit:cover;flex-shrink:0;" alt="">
-    <div style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:2px;">
-      <span style="font-size:13px;font-weight:700;">🎉 2026 歡慶主日　飼養主的羊</span>
-      <span style="font-size:11px;opacity:0.85;">10/25（日）上午10:00 ・ 台北矽谷B2廳　→ 招待計劃 &amp; 站位圖</span>
-    </div>
-  </div>
   <div class="r-bar">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <span class="r-title">招待同工輪值表</span>
@@ -648,6 +681,28 @@
 
 </main>
 
+<!-- ── 活動記錄 ── -->
+<section style="background:#F7F9FB;border-top:1px solid #E2E8F0;padding:18px 16px 28px;">
+  <div style="max-width:640px;margin:0 auto;">
+    <button onclick="this.parentElement.querySelector('.archive-list').style.display=this.parentElement.querySelector('.archive-list').style.display==='none'?'flex':'none';this.querySelector('.arr').textContent=this.querySelector('.arr').textContent==='▾'?'▸':'▾';"
+      style="background:none;border:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;font-size:12px;color:#7A8E9E;padding:0;margin-bottom:12px;">
+      <span class="arr">▸</span> 歷年歡慶主日活動記錄
+    </button>
+    <div class="archive-list" style="display:none;flex-direction:column;gap:10px;">
+      <!-- 2026 -->
+      <div onclick="document.getElementById('celebration-modal').style.display='block'"
+        style="display:flex;align-items:stretch;background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;cursor:pointer;transition:box-shadow .15s;"
+        onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+        <img src="celebration-poster.png" style="width:56px;object-fit:cover;flex-shrink:0;" alt="">
+        <div style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:3px;">
+          <span style="font-size:12px;font-weight:700;color:#1A3A5C;">🎉 2026 歡慶主日　飼養主的羊</span>
+          <span style="font-size:11px;color:#7A8E9E;">10/25（日）・ 台北矽谷B2廳　→ 點擊查看招待計劃 &amp; 站位圖</span>
+        </div>
+      </div>
+      <!-- 未來活動繼續往上加 -->
+    </div>
+  </div>
+</section>
 
 <script>
 function showTab(id, btn) {
@@ -1345,6 +1400,92 @@ async function loadService(svcId) {
 }
 
 // ── 10/25 歡慶主日：自動彈出 Modal ────────────────────────────────────────
+// ── 公告 Modal 互動 ──────────────────────────────────────────────────────
+window.closeAnnouncement = function() {
+  document.getElementById('announcement-modal').style.display = 'none';
+};
+
+window._selectedEmoji = null;
+
+window.selectEmoji = function(emoji) {
+  window._selectedEmoji = emoji;
+  document.querySelectorAll('.react-btn').forEach(function(b) {
+    b.classList.toggle('selected', b.getAttribute('data-emoji') === emoji);
+  });
+  var emojiRow = document.getElementById('emoji-row');
+  if (emojiRow) emojiRow.classList.add('emoji-has-selection');
+};
+
+window.submitReaction = function() {
+  var emoji = window._selectedEmoji || '';
+  var textEl = document.getElementById('reaction-text');
+  var text = textEl ? textEl.value.trim() : '';
+  console.log('[reaction] emoji:', emoji, 'text:', text);
+  if (!emoji && !text) {
+    // 提示需要選擇或填寫
+    if (textEl) { textEl.style.borderColor = '#e57373'; textEl.placeholder = '請選擇 emoji 或填寫回饋'; }
+    return;
+  }
+
+  // 停用表單
+  document.querySelectorAll('.react-btn').forEach(function(b) { b.disabled = true; });
+  if (textEl) textEl.disabled = true;
+
+  var url = '/.netlify/functions/reactions?emoji=' + encodeURIComponent(emoji) + '&text=' + encodeURIComponent(text);
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      showReactionResults(data.counts || {}, emoji);
+    })
+    .catch(function() {
+      var area = document.getElementById('announce-reaction-area');
+      if (area) area.innerHTML = '<p style="font-size:13px;color:#2a7a4a;font-weight:700;margin:8px 0;">謝謝你的回應！</p>';
+      setTimeout(closeAnnouncement, 1200);
+    });
+  window._selectedEmoji = null;
+};
+
+window.showReactionResults = function(counts, votedEmoji) {
+  var area = document.getElementById('announce-reaction-area');
+  if (!area) return;
+  var emojis = ['🤩', '❤️', '👍', '🤔'];
+  var max = 0;
+  emojis.forEach(function(e) { if ((counts[e] || 0) > max) max = counts[e] || 0; });
+  if (max === 0) max = 1;
+  var html = '<p style="font-size:11px;color:#7A8E9E;margin:0 0 10px;letter-spacing:.05em;">大家的反應</p>';
+  emojis.forEach(function(e) {
+    var count = counts[e] || 0;
+    var pct = Math.round((count / max) * 100);
+    var isVoted = e === votedEmoji;
+    html += '<div style="display:flex;align-items:center;gap:8px;margin:6px 0;">';
+    html += '<span style="font-size:20px;width:28px;text-align:center;">' + e + '</span>';
+    html += '<div style="flex:1;background:#F2F4F6;border-radius:4px;height:8px;overflow:hidden;">';
+    html += '<div style="width:' + pct + '%;height:100%;background:' + (isVoted ? '#1A3A5C' : '#9AAEBB') + ';border-radius:4px;transition:width .6s ease;"></div>';
+    html += '</div>';
+    html += '<span style="font-size:12px;color:#3D546B;width:22px;text-align:right;font-weight:' + (isVoted ? '700' : '400') + ';">' + count + '</span>';
+    html += '</div>';
+  });
+  area.innerHTML = html;
+  setTimeout(closeAnnouncement, 3500);
+};
+
+// ── 公告自動彈出（設定啟用區間後生效）────────────────────────────────────
+(function checkAnnouncementPopup() {
+  // ★ 時間設定：確認後填入，格式 [年, 月, 日起] [年, 月, 日止]
+  const FROM = [2026, 10, 26]; // ★ 測試用，確認後改回 null 或正式日期
+  const TO   = [2026, 10, 26]; // ★ 測試用
+  if (!FROM || !TO) return; // 尚未啟用
+  const now = new Date();
+  const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  const y = tw.getFullYear(), m = tw.getMonth() + 1, d = tw.getDate();
+  const after  = y > FROM[0] || (y === FROM[0] && (m > FROM[1] || (m === FROM[1] && d >= FROM[2])));
+  const before = y < TO[0]   || (y === TO[0]   && (m < TO[1]   || (m === TO[1]   && d <= TO[2])));
+  if (after && before) {
+    const modal = document.getElementById('announcement-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+})();
+
 (function checkCelebrationPopup() {
   const now = new Date();
   const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
