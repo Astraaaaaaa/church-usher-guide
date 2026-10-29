@@ -1472,8 +1472,8 @@ window.showReactionResults = function(counts, votedEmoji) {
 // ── 公告自動彈出（設定啟用區間後生效）────────────────────────────────────
 (function checkAnnouncementPopup() {
   // ★ 時間設定：確認後填入，格式 [年, 月, 日起] [年, 月, 日止]
-  const FROM = [2026, 10, 26]; // ★ 測試用，確認後改回 null 或正式日期
-  const TO   = [2026, 10, 26]; // ★ 測試用
+  const FROM = [2026, 10, 26];
+  const TO   = [2026, 11, 25];
   if (!FROM || !TO) return; // 尚未啟用
   const now = new Date();
   const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
