@@ -74,7 +74,7 @@ function toBase64(str) {
 async function main() {
   const dateStr = process.argv[2] || nextSundayStr();
   // 手動觸發（workflow_dispatch）時跳過時間篩選
-  const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
+  const isManual = ['workflow_dispatch', 'repository_dispatch'].includes(process.env.GITHUB_EVENT_NAME);
   if (isManual) console.log('🔧 手動觸發，略過時間篩選');
   console.log(`📅 查詢日期：${dateStr}`);
 

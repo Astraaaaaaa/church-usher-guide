@@ -18,6 +18,8 @@ on:
     - cron: '0 11 * * *'   # 台北 19:00
     - cron: '0 12 * * *'   # 台北 20:00
     - cron: '0 13 * * *'   # 台北 21:00
+  repository_dispatch:     # 允許 cron-job.org 透過 API 觸發
+    types: [push-reminder]
   workflow_dispatch:       # 允許手動觸發（測試用）
 
 jobs:
