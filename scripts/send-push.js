@@ -66,6 +66,9 @@ function nextSundayStr() {
 
 async function main() {
   const dateStr = process.argv[2] || nextSundayStr();
+  // 手動觸發（workflow_dispatch）時跳過時間篩選
+  const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
+  if (isManual) console.log('🔧 手動觸發，略過時間篩選');
   console.log(`📅 查詢日期：${dateStr}`);
 
   // 1. 取輪值
@@ -105,8 +108,10 @@ async function main() {
       continue;
     }
 
-    // 篩選符合本次執行時間的訂閱
-    const dueSubs = personSubs.filter(s => shouldNotifyNow(s.notifyTime || '1d_17:30'));
+    // 手動觸發時略過時間篩選，否則只發給符合時段的訂閱
+    const dueSubs = isManual
+      ? personSubs
+      : personSubs.filter(s => shouldNotifyNow(s.notifyTime || '1d_17:30'));
     if (dueSubs.length === 0) {
       console.log(`  ⏭  ${person.name}（不在通知時段）`);
       skipped++;
