@@ -36,6 +36,14 @@ const payload = JSON.stringify({
   body: `平安～ ${latest.name}，明主日第一堂在4F内招服事，請在08:10找總召集合，謝謝您！（測試通知）`
 });
 
-webpush.sendNotification(latest.subscription, payload)
+const sub = latest.subscription;
+const normalizedSub = {
+  endpoint: sub.endpoint,
+  keys: {
+    p256dh: (sub.keys.p256dh || '').replace(/-/g, '+').replace(/_/g, '/'),
+    auth:   (sub.keys.auth   || '').replace(/-/g, '+').replace(/_/g, '/'),
+  }
+};
+webpush.sendNotification(normalizedSub, payload)
   .then(() => console.log('✅ 通知發送成功！請查看瀏覽器'))
   .catch(err => console.error('❌ 發送失敗：', err.message));

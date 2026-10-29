@@ -64,6 +64,13 @@ function nextSundayStr() {
   return `${m}/${d}`;
 }
 
+// base64url → 標準 base64（補齊 padding，web-push 內部用 Buffer.from(...,'base64') 解碼）
+function toBase64(str) {
+  let s = (str || '').replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4 !== 0) s += '=';
+  return s;
+}
+
 async function main() {
   const dateStr = process.argv[2] || nextSundayStr();
   // 手動觸發（workflow_dispatch）時跳過時間篩選
@@ -119,9 +126,13 @@ async function main() {
     }
 
     for (const sub of dueSubs) {
+      const p256dhB64 = toBase64(sub.p256dh);
+      const authB64   = toBase64(sub.auth);
+      const keyLen = Buffer.from(p256dhB64, 'base64').length;
+      console.log(`  🔑 p256dh decoded: ${keyLen} bytes`);
       try {
         await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          { endpoint: sub.endpoint, keys: { p256dh: p256dhB64, auth: authB64 } },
           payload
         );
         console.log(`  ✅ ${person.name} → ${person.service} ${person.station}`);
