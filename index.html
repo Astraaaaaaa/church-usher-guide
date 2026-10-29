@@ -421,6 +421,49 @@
   <button id="pwa-hint-btn" onclick="handlePWABtn()" style="display:none;margin-top:14px;background:rgba(91,155,213,0.15);border:1px solid rgba(91,155,213,0.3);border-radius:20px;padding:6px 16px;color:var(--sky-light);font-size:12px;cursor:pointer;font-family:inherit;align-items:center;gap:6px;">
     <span>📲</span> 加入手機桌面
   </button>
+  <button id="push-subscribe-btn" onclick="openSubscribeModal()" style="display:none;margin-top:10px;background:rgba(91,155,213,0.15);border:1px solid rgba(91,155,213,0.3);border-radius:20px;padding:6px 16px;color:var(--sky-light);font-size:12px;cursor:pointer;font-family:inherit;align-items:center;gap:6px;">
+    <span>🔔</span> 訂閱服事提醒
+  </button>
+</div>
+
+<!-- ── 訂閱服事提醒 Modal ── -->
+<div id="subscribe-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1001;padding:20px 16px;align-items:center;justify-content:center;" onclick="if(event.target===this)closeSubscribeModal()">
+  <div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:24px 20px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <button onclick="closeSubscribeModal()" style="position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.15);border:none;width:26px;height:26px;border-radius:50%;font-size:14px;cursor:pointer;line-height:1;">×</button>
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:32px;margin-bottom:6px;">🔔</div>
+      <div style="font-size:16px;font-weight:700;color:#1A3A5C;">訂閱服事提醒</div>
+      <div style="font-size:12px;color:#7A8E9E;margin-top:4px;">主日服事前提醒你，不漏接每次排班</div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;color:#3D546B;font-weight:600;display:block;margin-bottom:6px;">選擇你的名字</label>
+      <input id="subscribe-name-input" type="text" placeholder="輸入名字搜尋…" autocomplete="off"
+        style="width:100%;padding:10px 12px;border:1px solid #D8E2EC;border-top-left-radius:10px;border-top-right-radius:10px;border-bottom:none;font-size:14px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;box-sizing:border-box;"
+        oninput="filterNameList(this.value)" />
+      <div id="name-dropdown" style="border:1px solid #D8E2EC;border-bottom-left-radius:10px;border-bottom-right-radius:10px;max-height:140px;overflow-y:auto;background:#fff;">
+        <div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">載入中…</div>
+      </div>
+      <input type="hidden" id="subscribe-name" value="" />
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:13px;color:#3D546B;font-weight:600;display:block;margin-bottom:6px;">提醒時間</label>
+      <div style="display:flex;gap:8px;">
+        <select id="subscribe-days" style="flex:1;padding:10px 8px;border:1px solid #D8E2EC;border-radius:10px;font-size:13px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;">
+          <option value="1">週六（前1天）</option>
+          <option value="2" selected>週五（前2天）</option>
+          <option value="3">週四（前3天）</option>
+        </select>
+        <select id="subscribe-time" style="flex:1;padding:10px 8px;border:1px solid #D8E2EC;border-radius:10px;font-size:13px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;">
+          <option value="09:00">早上 09:00</option>
+          <option value="12:00">中午 12:00</option>
+          <option value="17:30" selected>下午 17:30</option>
+          <option value="20:00">晚上 20:00</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="doSubscribe()" id="subscribe-confirm-btn" style="width:100%;background:#1A3A5C;color:#fff;border:none;border-radius:20px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">確認訂閱</button>
+    <div id="subscribe-status" style="margin-top:10px;font-size:12px;text-align:center;color:#7A8E9E;min-height:18px;"></div>
+  </div>
 </div>
 
 <!-- ── 加入桌面教學 Modal ── -->
@@ -1508,6 +1551,140 @@ window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _pwaPrompt = e;
 });
+
+// ── Push Notification 訂閱 ─────────────────────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BMq--hmPMeP0olt0PeCDw0yEl4T-dePrA5Kt_f2o_0hWRpM-5xj1d38L9_zQ6Wz9_Cojkvyee4SOgK4S5QYPKB4';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+// 支援推播就顯示訂閱按鈕
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+  document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('push-subscribe-btn');
+    if (btn) btn.style.display = 'inline-flex';
+  });
+}
+
+var _nameList = [];
+
+var _nameList = [];
+
+function renderNameList(q) {
+  const dd = document.getElementById('name-dropdown');
+  const query = (q || '').trim();
+  const filtered = query ? _nameList.filter(function(n){ return n.includes(query); }) : _nameList;
+  if (filtered.length === 0) {
+    dd.innerHTML = '<div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">找不到符合的名字</div>';
+    return;
+  }
+  const selected = document.getElementById('subscribe-name').value;
+  dd.innerHTML = filtered.map(function(n) {
+    const isSelected = n === selected;
+    return '<div style="padding:9px 12px;font-size:14px;color:#1A3A5C;cursor:pointer;'
+      + (isSelected ? 'background:#E8F0F8;font-weight:700;' : '')
+      + '" onclick="selectName(\'' + n + '\')" '
+      + 'onmouseover="if(this.getAttribute(\'data-sel\')!==\'1\')this.style.background=\'#F4F7FA\'" '
+      + 'onmouseout="if(this.getAttribute(\'data-sel\')!==\'1\')this.style.background=\'\'" '
+      + (isSelected ? 'data-sel="1"' : '') + '>'
+      + n + (isSelected ? ' ✓' : '') + '</div>';
+  }).join('');
+}
+
+window.openSubscribeModal = async function() {
+  document.getElementById('subscribe-modal').style.display = 'flex';
+  document.getElementById('subscribe-name').value = '';
+  document.getElementById('subscribe-name-input').value = '';
+  document.getElementById('name-dropdown').innerHTML = '<div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">載入中…</div>';
+  _nameList = [];
+  try {
+    const res = await fetch('/.netlify/functions/subscribe?action=names');
+    const data = await res.json();
+    _nameList = data.names || [];
+    if (_nameList.length === 0) throw new Error('empty');
+    renderNameList('');
+  } catch(e) {
+    document.getElementById('name-dropdown').innerHTML = '<div style="padding:10px 12px;font-size:13px;color:#e57373;">載入失敗，請重試</div>';
+  }
+};
+
+window.filterNameList = function(q) {
+  document.getElementById('subscribe-name').value = '';
+  renderNameList(q);
+};
+
+window.selectName = function(name) {
+  document.getElementById('subscribe-name').value = name;
+  document.getElementById('subscribe-name-input').value = name;
+  renderNameList(document.getElementById('subscribe-name-input').value);
+};
+
+window.closeSubscribeModal = function() {
+  document.getElementById('subscribe-modal').style.display = 'none';
+  document.getElementById('subscribe-status').textContent = '';
+};
+
+window.doSubscribe = async function() {
+  const name = (document.getElementById('subscribe-name').value || document.getElementById('subscribe-name-input').value).trim();
+  const statusEl = document.getElementById('subscribe-status');
+  const btn = document.getElementById('subscribe-confirm-btn');
+
+  if (!name) { statusEl.textContent = '請先選擇你的名字'; statusEl.style.color = '#e57373'; return; }
+
+  statusEl.style.color = '#7A8E9E';
+  statusEl.textContent = '要求通知權限中…';
+  btn.disabled = true;
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      statusEl.textContent = '請允許通知才能訂閱';
+      statusEl.style.color = '#e57373';
+      btn.disabled = false;
+      return;
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    statusEl.textContent = '儲存訂閱中…';
+    const notifyDays = document.getElementById('subscribe-days').value;
+    const notifyHour = document.getElementById('subscribe-time').value;
+    const notifyTime = notifyDays + 'd_' + notifyHour; // e.g. "2d_17:30"
+    const dayLabel = {'1':'週六','2':'週五','3':'週四'}[notifyDays] || '';
+    const res = await fetch('/.netlify/functions/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, notifyTime, subscription: sub.toJSON() }),
+    });
+
+    if (!res.ok) throw new Error('伺服器錯誤');
+    statusEl.style.color = '#2a7a4a';
+    statusEl.textContent = `✅ 訂閱成功！有排班時會在${dayLabel} ${notifyHour} 通知你`;
+    btn.textContent = '已訂閱 ✓';
+    btn.style.background = '#2a7a4a';
+    // 主頁 🔔 按鈕也變色
+    var mainBtn = document.getElementById('push-subscribe-btn');
+    if (mainBtn) {
+      mainBtn.textContent = '🔔 已訂閱提醒';
+      mainBtn.style.background = 'rgba(42,122,74,0.2)';
+      mainBtn.style.borderColor = 'rgba(42,122,74,0.5)';
+      mainBtn.style.color = '#2a7a4a';
+    }
+    setTimeout(closeSubscribeModal, 2500);
+  } catch (err) {
+    statusEl.style.color = '#e57373';
+    statusEl.textContent = '訂閱失敗：' + err.message;
+    btn.disabled = false;
+  }
+};
 
 window.handlePWABtn = function() {
   if (_pwaPrompt) {

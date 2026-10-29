@@ -1,0 +1,8 @@
+node_modules/
+scripts/node_modules/
+netlify/functions/node_modules/
+package-lock.json
+scripts/package-lock.json
+netlify/functions/package-lock.json
+.preview_subscriptions.json
+.preview_views_count

@@ -1,0 +1,31 @@
+name: 服事提醒推播
+
+on:
+  schedule:
+    # 每天 09:00 / 12:00 / 17:30 / 20:00 台北時間執行，script 自行判斷誰該收到
+    # 台北 UTC+8，所以 UTC = 台北 - 8
+    - cron: '0 1 * * *'    # 台北 09:00
+    - cron: '0 4 * * *'    # 台北 12:00
+    - cron: '30 9 * * *'   # 台北 17:30
+    - cron: '0 12 * * *'   # 台北 20:00
+  workflow_dispatch:       # 允許手動觸發（測試用）
+
+jobs:
+  send-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安裝依賴
+        run: cd scripts && npm install
+
+      - name: 發送服事提醒推播
+        env:
+          VAPID_PUBLIC_KEY:  ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          GAS_URL:           ${{ secrets.GAS_URL }}
+        run: node scripts/send-push.js
