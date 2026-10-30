@@ -4,6 +4,11 @@ on:
   repository_dispatch:     # 允許 cron-job.org 透過 API 觸發
     types: [push-reminder]
   workflow_dispatch:       # 允許手動觸發（測試用）
+    inputs:
+      respect_schedule:
+        description: '照訂閱時間篩選（測試時間用；不勾＝略過篩選，發給所有有排班的訂閱者）'
+        type: boolean
+        default: false
 
 jobs:
   send-push:
@@ -23,4 +28,5 @@ jobs:
           VAPID_PUBLIC_KEY:  ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           GAS_URL:           ${{ secrets.GAS_URL }}
+          RESPECT_SCHEDULE:  ${{ inputs.respect_schedule }}
         run: node scripts/send-push.js
