@@ -106,13 +106,34 @@ async function main() {
   // 3. 發送推播
   let sent = 0, skipped = 0, failed = 0;
 
-  for (const person of schedule) {
-    const fname      = firstName(person.name);
-    const captainPart = person.captain ? `找${person.captain}` : '找總召';
-    const [mm, dd] = dateStr.split('/').map(Number);
-    const dateLabel = `${mm}/${dd}（日）`;
-    const body = `平安～ ${fname}！${dateLabel}${person.service}｜${person.station}｜${person.collectTime} ${captainPart}集合，謝謝您！`;
-    const payload = JSON.stringify({ title: `${dateLabel} 招待服事提醒`, body, url: '/roster.html' });
+  // 同一個人當天可能有多筆（兩堂招待，或「總召＋招待」）→ 合併成一則通知，避免後一則蓋掉前一則
+  const groups = new Map();
+  schedule.forEach(e => {
+    if (!groups.has(e.name)) groups.set(e.name, []);
+    groups.get(e.name).push(e);
+  });
+
+  const [mm, dd] = dateStr.split('/').map(Number);
+  const dateLabel = `${mm}/${dd}（日）`;
+
+  for (const [name, entries] of groups) {
+    const person = { name };
+    const fname = firstName(name);
+    const describe = e => e.role === 'captain'
+      ? `${e.station}，請於 ${e.collectTime} 前到場`
+      : `${e.service}｜${e.station}｜${e.collectTime} ${e.captain ? '找' + e.captain : '找總召'}集合`;
+    const summary = entries.map(e => `${e.service} ${e.station}`).join(' + ');
+
+    let body, title;
+    if (entries.length === 1) {
+      body = `平安～ ${fname}！${dateLabel}${describe(entries[0])}，謝謝您！`;
+      title = `${dateLabel} ${entries[0].role === 'captain' ? '總召' : '招待'}服事提醒`;
+    } else {
+      body = `平安～ ${fname}！${dateLabel}您有 ${entries.length} 個服事：` +
+        entries.map((e, i) => `${i + 1}. ${describe(e)}`).join('；') + '，謝謝您！';
+      title = `${dateLabel} 服事提醒`;
+    }
+    const payload = JSON.stringify({ title, body, url: '/roster.html' });
 
     const personSubs = subMap[person.name] || [];
     if (personSubs.length === 0) {
@@ -145,7 +166,7 @@ async function main() {
           { endpoint: sub.endpoint, keys: { p256dh: p256dhB64, auth: authB64 } },
           payload
         );
-        console.log(`  ✅ ${person.name} → ${person.service} ${person.station}`);
+        console.log(`  ✅ ${person.name} → ${summary}`);
         sent++;
       } catch (err) {
         console.error(`  ❌ ${person.name} 失敗：${err.message}`);
