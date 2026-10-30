@@ -28,6 +28,15 @@ exports.handler = async function (event) {
   // POST → 儲存訂閱
   try {
     const body = JSON.parse(event.body || '{}');
+    // 取消訂閱：依 endpoint 刪除
+    if (body.action === 'unsubscribe') {
+      if (!body.endpoint) {
+        return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ error: '缺少 endpoint' }) };
+      }
+      await fetch(GAS_URL + '?action=unsubscribe&endpoint=' + encodeURIComponent(body.endpoint), { redirect: 'follow' });
+      return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true }) };
+    }
+
     const { name, notifyTime, subscription } = body;
 
     if (!name || !subscription || !subscription.endpoint) {
