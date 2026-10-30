@@ -124,18 +124,24 @@ async function main() {
   for (const [name, entries] of groups) {
     const person = { name };
     const fname = firstName(name);
-    const describe = e => e.role === 'captain'
-      ? `${e.station}，請於 ${e.collectTime} 前到場`
-      : `${e.service}｜${e.station}｜${e.collectTime} ${e.captain ? '找' + e.captain : '找總召'}集合`;
+    // 每個服事兩行：📍 堂次｜站位　⏰ 時間／集合對象
+    const place = e => `📍 ${e.service}｜${e.station}`;
+    const when  = e => e.role === 'captain'
+      ? `⏰ ${e.collectTime} 前到場`
+      : `⏰ ${e.collectTime} ${e.captain ? '找' + e.captain : '找總召'}集合`;
     const summary = entries.map(e => `${e.service} ${e.station}`).join(' + ');
 
+    const greet = `${fname} 平安～`;
     let body, title;
     if (entries.length === 1) {
-      body = `平安～ ${fname}！${dateLabel}${describe(entries[0])}，謝謝您！`;
-      title = `${dateLabel} ${entries[0].role === 'captain' ? '總召' : '招待'}服事提醒`;
+      const e = entries[0];
+      body = `${greet}\n${place(e)}\n${when(e)}，謝謝您！`;
+      title = `${dateLabel} ${e.role === 'captain' ? '總召' : '招待'}服事提醒`;
     } else {
-      body = `平安～ ${fname}！${dateLabel}您有 ${entries.length} 個服事：` +
-        entries.map((e, i) => `${i + 1}. ${describe(e)}`).join('；') + '，謝謝您！';
+      const nums = ['①', '②', '③', '④'];
+      body = `${greet}\n` +
+        entries.map((e, i) => `${nums[i] || (i + 1) + '.'} ${place(e)}\n    ${when(e)}`).join('\n') +
+        '\n謝謝您！';
       title = `${dateLabel} 服事提醒`;
     }
     const payload = JSON.stringify({ title, body, url: '/roster.html' });
