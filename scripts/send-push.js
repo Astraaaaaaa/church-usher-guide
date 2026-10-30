@@ -137,7 +137,9 @@ async function main() {
 
   for (const [name, entries] of groups) {
     const person = { name };
-    const fname = firstName(name);
+    // 問候語：總召用稱呼（欣芳姐），招待用全名去姓
+    const aliasEntry = entries.find(e => e.alias);
+    const fname = aliasEntry ? aliasEntry.alias : firstName(name);
     // 每個服事兩行：📍 堂次｜站位　⏰ 時間／集合對象
     const place = e => `📍${e.service}｜${e.station}`;
     const when  = e => e.role === 'captain'
