@@ -25,6 +25,9 @@ function firstName(fullName) {
   return n.slice(1);
 }
 
+// 總召集合時間（與招待相同）；直接在這裡指定，不依賴 GAS 回傳的時間
+const CAPTAIN_COLLECT = { '第一堂': '08:10', '第二堂': '10:10' };
+
 // 通知結尾語
 const CLOSING = '感謝您的擺上～主日見！';
 
@@ -138,7 +141,7 @@ async function main() {
     // 每個服事兩行：📍 堂次｜站位　⏰ 時間／集合對象
     const place = e => `📍${e.service}｜${e.station}`;
     const when  = e => e.role === 'captain'
-      ? `⏰${e.collectTime} 抵達集合招待`
+      ? `⏰${CAPTAIN_COLLECT[e.service] || e.collectTime} 抵達集合招待`
       : `⏰${e.collectTime} ${e.captain ? '請找' + e.captain : '請找總召'}集合`;
     const summary = entries.map(e => `${e.service} ${e.station}`).join(' + ');
 
