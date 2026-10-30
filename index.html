@@ -424,6 +424,9 @@
   <button id="push-subscribe-btn" onclick="openSubscribeModal()" style="display:none;margin-top:10px;background:rgba(91,155,213,0.15);border:1px solid rgba(91,155,213,0.3);border-radius:20px;padding:6px 16px;color:var(--sky-light);font-size:12px;cursor:pointer;font-family:inherit;align-items:center;gap:6px;">
     <span>🔔</span> 訂閱服事提醒
   </button>
+  <button id="push-unsubscribe-btn" onclick="doUnsubscribe()" style="display:none;margin-top:10px;background:rgba(229,115,115,0.12);border:1px solid rgba(229,115,115,0.35);border-radius:20px;padding:6px 16px;color:#e57373;font-size:12px;cursor:pointer;font-family:inherit;align-items:center;gap:6px;">
+    <span>🔕</span> 取消訂閱提醒
+  </button>
 </div>
 
 <!-- ── 訂閱服事提醒 Modal ── -->
@@ -1578,8 +1581,55 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
   document.addEventListener('DOMContentLoaded', function() {
     const btn = document.getElementById('push-subscribe-btn');
     if (btn) btn.style.display = 'inline-flex';
+    refreshPushButtons();
   });
 }
+
+// 依目前是否已訂閱，切換「訂閱 / 取消訂閱」按鈕
+async function refreshPushButtons() {
+  const subBtn   = document.getElementById('push-subscribe-btn');
+  const unsubBtn = document.getElementById('push-unsubscribe-btn');
+  if (!subBtn || !unsubBtn) return;
+  let subscribed = false;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    subscribed = !!(await reg.pushManager.getSubscription());
+  } catch (e) {}
+  if (subscribed) {
+    subBtn.innerHTML = '<span>🔔</span> 已訂閱提醒';
+    subBtn.style.background = 'rgba(42,122,74,0.2)';
+    subBtn.style.borderColor = 'rgba(42,122,74,0.5)';
+    subBtn.style.color = '#2a7a4a';
+    unsubBtn.style.display = 'inline-flex';
+  } else {
+    subBtn.innerHTML = '<span>🔔</span> 訂閱服事提醒';
+    subBtn.style.background = 'rgba(91,155,213,0.15)';
+    subBtn.style.borderColor = 'rgba(91,155,213,0.3)';
+    subBtn.style.color = 'var(--sky-light)';
+    unsubBtn.style.display = 'none';
+  }
+}
+
+window.doUnsubscribe = async function() {
+  if (!confirm('確定要取消訂閱服事提醒嗎？')) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      const res = await fetch('/.netlify/functions/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unsubscribe', endpoint: sub.endpoint }),
+      });
+      if (!res.ok) throw new Error('伺服器錯誤');
+      await sub.unsubscribe();
+    }
+    alert('已取消訂閱');
+  } catch (err) {
+    alert('取消訂閱失敗：' + err.message);
+  }
+  refreshPushButtons();
+};
 
 var _nameList = [];
 
@@ -1681,14 +1731,7 @@ window.doSubscribe = async function() {
     statusEl.textContent = `✅ 訂閱成功！有排班時會在${dayLabel} ${notifyHour} 通知你`;
     btn.textContent = '已訂閱 ✓';
     btn.style.background = '#2a7a4a';
-    // 主頁 🔔 按鈕也變色
-    var mainBtn = document.getElementById('push-subscribe-btn');
-    if (mainBtn) {
-      mainBtn.textContent = '🔔 已訂閱提醒';
-      mainBtn.style.background = 'rgba(42,122,74,0.2)';
-      mainBtn.style.borderColor = 'rgba(42,122,74,0.5)';
-      mainBtn.style.color = '#2a7a4a';
-    }
+    refreshPushButtons();
     setTimeout(closeSubscribeModal, 2500);
   } catch (err) {
     statusEl.style.color = '#e57373';

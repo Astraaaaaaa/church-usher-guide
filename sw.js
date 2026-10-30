@@ -21,13 +21,14 @@ self.addEventListener('push', e => {
       badge: '/icon-192.png',
       tag: 'usher-reminder',
       renotify: true,
+      data: { url: data.url || '/' },
     })
   );
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(clients.openWindow('/'));
+  e.waitUntil(clients.openWindow((e.notification.data && e.notification.data.url) || '/'));
 });
 
 self.addEventListener('fetch', e => {
