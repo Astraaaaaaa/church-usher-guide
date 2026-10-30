@@ -114,6 +114,7 @@ async function main() {
   const groups = new Map();
   schedule.forEach(e => {
     const k = norm(e.name);
+    if (!/^[\u4e00-\u9fa5]{2,6}$/.test(k)) { console.log(`  ⚠️  略過不像人名的資料：${k}`); return; }
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(e);
   });
