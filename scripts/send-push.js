@@ -122,8 +122,15 @@ async function main() {
     groups.get(k).push(e);
   });
 
+  // 日期顯示 yyyy.mm.dd：年份由台北今天推算（跨年時 12 月看 01 月＝明年）
   const [mm, dd] = dateStr.split('/').map(Number);
-  const dateLabel = `${mm}/${dd}（日）`;
+  const twNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  let year = twNow.getFullYear();
+  const nowM = twNow.getMonth() + 1;
+  if (mm < nowM - 6) year += 1;
+  else if (mm > nowM + 6) year -= 1;
+  const weekday = '日一二三四五六'[new Date(year, mm - 1, dd).getDay()];   // 依日期自動算星期
+  const dateLabel = `${year}.${String(mm).padStart(2, '0')}.${String(dd).padStart(2, '0')}（${weekday}）`;
 
   for (const [name, entries] of groups) {
     const person = { name };
