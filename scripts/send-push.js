@@ -25,6 +25,9 @@ function firstName(fullName) {
   return n.slice(1);
 }
 
+// 名字統一去掉所有空白，才能對上不同分頁的寫法（例如「容   容」「容容」）
+const norm = n => String(n || '').replace(/\s+/g, '');
+
 // 取得台北時間現在的 weekday(0=Sun) 和 HH:MM
 function getTaipeiNow() {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
@@ -99,8 +102,9 @@ async function main() {
 
   const subMap = {};
   subs.forEach(s => {
-    if (!subMap[s.name]) subMap[s.name] = [];
-    subMap[s.name].push(s);
+    const k = norm(s.name);
+    if (!subMap[k]) subMap[k] = [];
+    subMap[k].push(s);
   });
 
   // 3. 發送推播
@@ -109,8 +113,9 @@ async function main() {
   // 同一個人當天可能有多筆（兩堂招待，或「總召＋招待」）→ 合併成一則通知，避免後一則蓋掉前一則
   const groups = new Map();
   schedule.forEach(e => {
-    if (!groups.has(e.name)) groups.set(e.name, []);
-    groups.get(e.name).push(e);
+    const k = norm(e.name);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(e);
   });
 
   const [mm, dd] = dateStr.split('/').map(Number);
@@ -135,7 +140,7 @@ async function main() {
     }
     const payload = JSON.stringify({ title, body, url: '/roster.html' });
 
-    const personSubs = subMap[person.name] || [];
+    const personSubs = subMap[name] || [];
     if (personSubs.length === 0) {
       console.log(`  ⏭  ${person.name}（無訂閱）`);
       skipped++;
