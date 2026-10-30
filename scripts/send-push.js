@@ -129,10 +129,10 @@ async function main() {
     const person = { name };
     const fname = firstName(name);
     // 每個服事兩行：📍 堂次｜站位　⏰ 時間／集合對象
-    const place = e => `📍 ${e.service}｜${e.station}`;
+    const place = e => `📍${e.service}｜${e.station}`;
     const when  = e => e.role === 'captain'
-      ? `⏰ ${e.collectTime} 抵達集合招待`
-      : `⏰ ${e.collectTime} ${e.captain ? '請找' + e.captain : '請找總召'}集合`;
+      ? `⏰${e.collectTime} 抵達集合招待`
+      : `⏰${e.collectTime} ${e.captain ? '請找' + e.captain : '請找總召'}集合`;
     const summary = entries.map(e => `${e.service} ${e.station}`).join(' + ');
 
     const greet = `${fname} 平安～`;
