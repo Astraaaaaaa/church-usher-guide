@@ -78,6 +78,7 @@ async function main() {
   // 只有人工在 GitHub 按「Run workflow」才略過篩選；cron-job.org 的 repository_dispatch 仍要照訂閱時間篩選
   const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
   if (isManual) console.log('🔧 手動觸發，略過時間篩選');
+  { const t = getTaipeiNow(); console.log(`🕒 觸發來源：${process.env.GITHUB_EVENT_NAME || '本機'}｜台北時間：週${t.weekday} ${t.hour}:${t.minute}｜isManual=${isManual}`); }
   console.log(`📅 查詢日期：${dateStr}`);
 
   // 1. 取輪值
@@ -122,7 +123,11 @@ async function main() {
     // 手動觸發時略過時間篩選，否則只發給符合時段的訂閱
     const dueSubs = isManual
       ? personSubs
-      : personSubs.filter(s => shouldNotifyNow(s.notifyTime || '1d_17:30'));
+      : personSubs.filter(s => {
+          const ok = shouldNotifyNow(s.notifyTime || '1d_17:30');
+          console.log(`  🔍 ${person.name} notifyTime=${s.notifyTime || '(空，預設 1d_17:30)'} → ${ok ? '符合' : '不符合'}`);
+          return ok;
+        });
     if (dueSubs.length === 0) {
       console.log(`  ⏭  ${person.name}（不在通知時段）`);
       skipped++;
