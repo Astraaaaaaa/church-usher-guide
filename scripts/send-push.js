@@ -20,9 +20,9 @@ webpush.setVapidDetails('mailto:chiehastra@gmail.com', VAPID_PUBLIC, VAPID_PRIVA
 // 從全名去掉姓（第一個字）
 function firstName(fullName) {
   const n = fullName.trim();
-  // 若名字帶空格（如「容   容」）或稱謂（姐/哥/師），直接用原名
-  if (/\s/.test(n) || /[姐哥師]$/.test(n)) return n;
-  return n.length > 1 ? n.slice(1) : n;
+  // 兩個字（含以下）的名字不去姓；帶空格（如「容   容」）或稱謂（姐/哥/師）也直接用原名
+  if (n.length <= 2 || /\s/.test(n) || /[姐哥師]$/.test(n)) return n;
+  return n.slice(1);
 }
 
 // 取得台北時間現在的 weekday(0=Sun) 和 HH:MM
@@ -47,11 +47,12 @@ function shouldNotifyNow(notifyTime) {
   const targetWeekday = (7 - parseInt(daysPart)) % 7; // 前1天=6(六), 前2天=5(五), 前3天=4(四)
   if (weekday !== targetWeekday) return false;
 
-  // 允許 ±5 分鐘誤差
+  // 整點後 0～15 分鐘內才發（容許 GitHub cron 延遲，但不提前）
   const [th, tm] = timePart.split(':').map(Number);
   const targetMin = th * 60 + tm;
   const nowMin = parseInt(hour) * 60 + parseInt(minute);
-  return Math.abs(nowMin - targetMin) <= 5;
+  const diff = nowMin - targetMin;
+  return diff >= -2 && diff <= 15;
 }
 
 // 取得下週日日期字串 MM/DD（台北時間）
@@ -74,7 +75,8 @@ function toBase64(str) {
 async function main() {
   const dateStr = process.argv[2] || nextSundayStr();
   // 手動觸發（workflow_dispatch）時跳過時間篩選
-  const isManual = ['workflow_dispatch', 'repository_dispatch'].includes(process.env.GITHUB_EVENT_NAME);
+  // 只有人工在 GitHub 按「Run workflow」才略過篩選；cron-job.org 的 repository_dispatch 仍要照訂閱時間篩選
+  const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
   if (isManual) console.log('🔧 手動觸發，略過時間篩選');
   console.log(`📅 查詢日期：${dateStr}`);
 
@@ -105,8 +107,10 @@ async function main() {
   for (const person of schedule) {
     const fname      = firstName(person.name);
     const captainPart = person.captain ? `找${person.captain}` : '找總召';
-    const body = `平安～ ${fname}，明主日${person.service}在${person.station}服事，請在${person.collectTime}${captainPart}集合，謝謝您！`;
-    const payload = JSON.stringify({ title: '🔔 主日招待服事提醒 🔔', body });
+    const [mm, dd] = dateStr.split('/').map(Number);
+    const dateLabel = `${mm}/${dd}（日）`;
+    const body = `平安～ ${fname}！${dateLabel}${person.service}｜${person.station}｜${person.collectTime} ${captainPart}集合，謝謝您！`;
+    const payload = JSON.stringify({ title: `${dateLabel} 招待服事提醒`, body, url: '/roster.html' });
 
     const personSubs = subMap[person.name] || [];
     if (personSubs.length === 0) {
