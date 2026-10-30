@@ -25,6 +25,9 @@ function firstName(fullName) {
   return n.slice(1);
 }
 
+// 通知結尾語
+const CLOSING = '感謝您的擺上～主日見！';
+
 // 名字統一去掉所有空白，才能對上不同分頁的寫法（例如「容   容」「容容」）
 const norm = n => String(n || '').replace(/\s+/g, '');
 
@@ -128,21 +131,21 @@ async function main() {
     // 每個服事兩行：📍 堂次｜站位　⏰ 時間／集合對象
     const place = e => `📍 ${e.service}｜${e.station}`;
     const when  = e => e.role === 'captain'
-      ? `⏰ ${e.collectTime} 前到場`
-      : `⏰ ${e.collectTime} ${e.captain ? '找' + e.captain : '找總召'}集合`;
+      ? `⏰ ${e.collectTime} 抵達集合招待`
+      : `⏰ ${e.collectTime} ${e.captain ? '請找' + e.captain : '請找總召'}集合`;
     const summary = entries.map(e => `${e.service} ${e.station}`).join(' + ');
 
     const greet = `${fname} 平安～`;
     let body, title;
     if (entries.length === 1) {
       const e = entries[0];
-      body = `${greet}\n${place(e)}\n${when(e)}，謝謝您！`;
+      body = `${greet}\n${place(e)} ${when(e)}\n${CLOSING}`;
       title = `${dateLabel} ${e.role === 'captain' ? '總召' : '招待'}服事提醒`;
     } else {
       const nums = ['①', '②', '③', '④'];
       body = `${greet}\n` +
-        entries.map((e, i) => `${nums[i] || (i + 1) + '.'} ${place(e)}\n    ${when(e)}`).join('\n') +
-        '\n謝謝您！';
+        entries.map((e, i) => `${nums[i] || (i + 1) + '.'} ${place(e)} ${when(e)}`).join('\n') +
+        `\n${CLOSING}`;
       title = `${dateLabel} 服事提醒`;
     }
     const payload = JSON.stringify({ title, body, url: '/roster.html' });
