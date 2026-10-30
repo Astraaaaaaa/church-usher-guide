@@ -1,206 +1,353 @@
-#!/usr/bin/env node
-/**
- * 每週六服事提醒推播腳本
- * 由 GitHub Actions 在台北時間每週六 17:30 執行
- */
+// ========================================================================
+// 招待網頁 GAS 後端（整份取代 Code.gs，貼上後「部署 → 管理部署作業 → 編輯 → 新版本」）
+// ========================================================================
 
-const webpush = require('web-push');
+function doGet(e) {
+  const action = e.parameter.action || '';
 
-const VAPID_PUBLIC  = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
-const GAS_URL       = process.env.GAS_URL;
+  if (action === 'hit') {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName('_stats');
+    if (!sheet) {
+      sheet = ss.insertSheet('_stats');
+      sheet.getRange('A1').setValue(0);
+    }
+    const cell = sheet.getRange('A1');
+    const count = (parseInt(cell.getValue()) || 0) + 1;
+    cell.setValue(count);
+    return ContentService.createTextOutput(JSON.stringify({ count: count }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  if (action === 'react')         { return recordReaction(e.parameter.emoji || '', e.parameter.text || ''); }
+  if (action === 'counts')        { return getReactionCounts(); }
+  if (action === 'subscribe')     { return handleSubscribe(e); }
+  if (action === 'unsubscribe')   { return handleUnsubscribe(e); }
+  if (action === 'subscriptions') { return getSubscriptions(); }
+  if (action === 'schedule')      { return getSchedule(e); }
+  if (action === 'names')         { return getNames(); }
 
-if (!VAPID_PUBLIC || !VAPID_PRIVATE || !GAS_URL) {
-  console.error('❌ 缺少環境變數：VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / GAS_URL');
-  process.exit(1);
+  // 預設：回傳整張 sheet
+  const tab = e.parameter.tab || '2026';
+  const cb  = e.parameter.callback || null;
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(tab);
+  if (!sheet) {
+    const err = JSON.stringify({ error: 'Tab not found: ' + tab });
+    return ContentService.createTextOutput(cb ? cb + '(' + err + ')' : err)
+      .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
+  }
+  const data = sheet.getDataRange().getValues();
+  const body = JSON.stringify(data);
+  return ContentService.createTextOutput(cb ? cb + '(' + body + ')' : body)
+    .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
 }
 
-webpush.setVapidDetails('mailto:chiehastra@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
-
-// 從全名去掉姓（第一個字）
-function firstName(fullName) {
-  const n = fullName.trim();
-  // 兩個字（含以下）的名字不去姓；帶空格（如「容   容」）或稱謂（姐/哥/師）也直接用原名
-  if (n.length <= 2 || /\s/.test(n) || /[姐哥師]$/.test(n)) return n;
-  return n.slice(1);
+// ── 回饋 ───────────────────────────────────────────────────────────────────
+function recordReaction(emoji, text) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Reactions');
+  if (!sheet) {
+    sheet = ss.insertSheet('Reactions');
+    sheet.appendRow(['時間', 'Emoji', '回饋文字']);
+  }
+  const now = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+  sheet.appendRow([now, emoji, text]);
+  return getReactionCounts();
 }
 
-// 通知結尾語
-const CLOSING = '感謝您的擺上～主日見！';
-
-// 名字統一去掉所有空白，才能對上不同分頁的寫法（例如「容   容」「容容」）
-const norm = n => String(n || '').replace(/\s+/g, '');
-
-// 取得台北時間現在的 weekday(0=Sun) 和 HH:MM
-function getTaipeiNow() {
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-  return { weekday: now.getDay(), hour: String(now.getHours()).padStart(2,'0'), minute: String(now.getMinutes()).padStart(2,'0') };
+function getReactionCounts() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Reactions');
+  const counts = {};
+  if (sheet && sheet.getLastRow() > 1) {
+    const data = sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getValues();
+    data.forEach(([e]) => { if (e) counts[e] = (counts[e] || 0) + 1; });
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, counts }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-// 判斷訂閱者的 notifyTime 是否符合目前執行時間
-// notifyTime 格式："2d_17:30" 表示主日前2天 17:30 通知
-// 主日 weekday=0，前1天=週六(6)，前2天=週五(5)，前3天=週四(4)
-function shouldNotifyNow(notifyTime) {
-  const { weekday, hour, minute } = getTaipeiNow();
-  const currentTime = `${hour}:${minute}`;
+// ── 訂閱 / 取消訂閱 ────────────────────────────────────────────────────────
+// Subscriptions 欄位：A 姓名 | B notifyTime | C Endpoint | D P256dh | E Auth | F 建立時間
+function handleSubscribe(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Subscriptions');
+  if (!sheet) {
+    sheet = ss.insertSheet('Subscriptions');
+    sheet.appendRow(['姓名', 'notifyTime', 'Endpoint', 'P256dh', 'Auth', '建立時間']);
+  }
+  const name       = e.parameter.name       || '';
+  const notifyTime = e.parameter.notifyTime || '1d_17:30';
+  const endpoint   = e.parameter.endpoint   || '';
+  const p256dh     = e.parameter.p256dh     || '';
+  const auth       = e.parameter.auth       || '';
+  const now        = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
 
-  // 相容舊格式（純時間字串，如 "17:30"）→ 預設週六前1天
-  if (!notifyTime.includes('d_')) {
-    return weekday === 6 && currentTime >= notifyTime && currentTime <= notifyTime.replace(/(\d+)$/, m => String(parseInt(m)+10).padStart(2,'0'));
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === name && data[i][2] === endpoint) {
+      sheet.getRange(i + 1, 2, 1, 4).setValues([[notifyTime, endpoint, p256dh, auth]]);
+      return json({ ok: true, action: 'updated' });
+    }
+  }
+  sheet.appendRow([name, notifyTime, endpoint, p256dh, auth, now]);
+  return json({ ok: true, action: 'created' });
+}
+
+function handleUnsubscribe(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Subscriptions');
+  const endpoint = e.parameter.endpoint || '';
+  if (!sheet || !endpoint) return json({ ok: false });
+
+  const data = sheet.getDataRange().getValues();
+  let removed = 0;
+  // 由下往上刪，避免列號位移；Endpoint 在第 3 欄（index 2）
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][2] === endpoint) {
+      sheet.deleteRow(i + 1);
+      removed++;
+    }
+  }
+  return json({ ok: true, removed: removed });
+}
+
+function getSubscriptions() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Subscriptions');
+  if (!sheet || sheet.getLastRow() < 2) return json([]);
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues();
+  const result = data
+    .filter(r => r[0] && r[2])
+    .map(r => ({
+      name:       r[0],
+      notifyTime: r[1] || '1d_17:30',
+      endpoint:   r[2],
+      p256dh:     r[3],
+      auth:       r[4]
+    }));
+  return json(result);
+}
+
+// ── 排班（招待 + 總召）─────────────────────────────────────────────────────
+function getSchedule(e) {
+  const dateParam = (e.parameter.date || '').trim();   // 格式 MM/DD，例如 11/01
+  const tab       = e.parameter.tab || '2026';
+
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(tab);
+  if (!sheet) return json([]);
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 3) return json([]);
+
+  const stationRow = data[0];
+  const serviceRow = data[1];
+
+  let secondStart = -1;
+  for (let c = 0; c < serviceRow.length; c++) {
+    if (String(serviceRow[c]).includes('第二堂')) { secondStart = c; break; }
   }
 
-  const [daysPart, timePart] = notifyTime.split('d_'); // e.g. "2", "17:30"
-  const targetWeekday = (7 - parseInt(daysPart)) % 7; // 前1天=6(六), 前2天=5(五), 前3天=4(四)
-  if (weekday !== targetWeekday) return false;
-
-  // 整點後 0～15 分鐘內才發（容許 GitHub cron 延遲，但不提前）
-  const [th, tm] = timePart.split(':').map(Number);
-  const targetMin = th * 60 + tm;
-  const nowMin = parseInt(hour) * 60 + parseInt(minute);
-  const diff = nowMin - targetMin;
-  return diff >= -2 && diff <= 15;
-}
-
-// 取得下週日日期字串 MM/DD（台北時間）
-function nextSundayStr() {
-  const tw = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-  const daysUntil = tw.getDay() === 0 ? 7 : 7 - tw.getDay();
-  tw.setDate(tw.getDate() + daysUntil);
-  const m = String(tw.getMonth() + 1).padStart(2, '0');
-  const d = String(tw.getDate()).padStart(2, '0');
-  return `${m}/${d}`;
-}
-
-// base64url → 標準 base64（補齊 padding，web-push 內部用 Buffer.from(...,'base64') 解碼）
-function toBase64(str) {
-  let s = (str || '').replace(/-/g, '+').replace(/_/g, '/');
-  while (s.length % 4 !== 0) s += '=';
-  return s;
-}
-
-async function main() {
-  const dateStr = process.argv[2] || nextSundayStr();
-  // 手動觸發（workflow_dispatch）時跳過時間篩選
-  // 只有人工在 GitHub 按「Run workflow」才略過篩選；cron-job.org 的 repository_dispatch 仍要照訂閱時間篩選
-  // 手動執行時若勾選「照訂閱時間篩選」(RESPECT_SCHEDULE=true)，就不略過篩選
-  const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' && process.env.RESPECT_SCHEDULE !== 'true';
-  if (isManual) console.log('🔧 手動觸發，略過時間篩選');
-  { const t = getTaipeiNow(); console.log(`🕒 觸發來源：${process.env.GITHUB_EVENT_NAME || '本機'}｜台北時間：週${t.weekday} ${t.hour}:${t.minute}｜isManual=${isManual}`); }
-  console.log(`📅 查詢日期：${dateStr}`);
-
-  // 1. 取輪值
-  const schedRes = await fetch(`${GAS_URL}?action=schedule&date=${dateStr}`);
-  const schedule = await schedRes.json();
-  console.log(`📋 排班人數：${schedule.length}`);
-
-  if (schedule.length === 0) {
-    console.log('⚠️  當日無排班資料，結束。');
-    return;
+  // 日期比對：同時支援 Date 物件和字串
+  function cellToMD(cell) {
+    if (cell instanceof Date) {
+      const m = String(cell.getMonth() + 1).padStart(2, '0');
+      const d = String(cell.getDate()).padStart(2, '0');
+      return m + '/' + d;
+    }
+    return String(cell).trim();
   }
 
-  // 2. 取訂閱
-  const subsRes = await fetch(`${GAS_URL}?action=subscriptions`);
-  const subs    = await subsRes.json();
-  console.log(`🔔 訂閱人數：${subs.length}`);
-
-  const subMap = {};
-  subs.forEach(s => {
-    const k = norm(s.name);
-    if (!subMap[k]) subMap[k] = [];
-    subMap[k].push(s);
-  });
-
-  // 3. 發送推播
-  let sent = 0, skipped = 0, failed = 0;
-
-  // 同一個人當天可能有多筆（兩堂招待，或「總召＋招待」）→ 合併成一則通知，避免後一則蓋掉前一則
-  const groups = new Map();
-  schedule.forEach(e => {
-    const k = norm(e.name);
-    if (!/^[\u4e00-\u9fa5]{2,6}$/.test(k)) { console.log(`  ⚠️  略過不像人名的資料：${k}`); return; }
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(e);
-  });
-
-  // 日期顯示 yyyy.mm.dd：年份由台北今天推算（跨年時 12 月看 01 月＝明年）
-  const [mm, dd] = dateStr.split('/').map(Number);
-  const twNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-  let year = twNow.getFullYear();
-  const nowM = twNow.getMonth() + 1;
-  if (mm < nowM - 6) year += 1;
-  else if (mm > nowM + 6) year -= 1;
-  const weekday = '日一二三四五六'[new Date(year, mm - 1, dd).getDay()];   // 依日期自動算星期
-  const dateLabel = `${year}.${String(mm).padStart(2, '0')}.${String(dd).padStart(2, '0')}（${weekday}）`;
-
-  for (const [name, entries] of groups) {
-    const person = { name };
-    const fname = firstName(name);
-    // 每個服事兩行：📍 堂次｜站位　⏰ 時間／集合對象
-    const place = e => `📍${e.service}｜${e.station}`;
-    const when  = e => e.role === 'captain'
-      ? `⏰${e.collectTime} 抵達集合招待`
-      : `⏰${e.collectTime} ${e.captain ? '請找' + e.captain : '請找總召'}集合`;
-    const summary = entries.map(e => `${e.service} ${e.station}`).join(' + ');
-
-    const greet = `${fname} 平安～`;
-    let body, title;
-    if (entries.length === 1) {
-      const e = entries[0];
-      body = `${greet}\n${place(e)} ${when(e)}\n${CLOSING}`;
-      title = `${dateLabel} ${e.role === 'captain' ? '總召' : '招待'}服事提醒`;
-    } else {
-      const nums = ['①', '②', '③', '④'];
-      body = `${greet}\n` +
-        entries.map((e, i) => `${nums[i] || (i + 1) + '.'} ${place(e)} ${when(e)}`).join('\n') +
-        `\n${CLOSING}`;
-      title = `${dateLabel} 服事提醒`;
+  let targetRow = -1;
+  for (let r = 2; r < data.length; r++) {
+    for (let c = 0; c < data[r].length; c++) {
+      if (cellToMD(data[r][c]) === dateParam) { targetRow = r; break; }
     }
-    const payload = JSON.stringify({ title, body, url: '/roster.html' });
+    if (targetRow >= 0) break;
+  }
+  if (targetRow < 0) return json([]);
 
-    const personSubs = subMap[name] || [];
-    if (personSubs.length === 0) {
-      console.log(`  ⏭  ${person.name}（無訂閱）`);
-      skipped++;
-      continue;
+  const month    = parseInt(dateParam.split('/')[0], 10);
+  const captains = getCaptainsForMonth(month, tab);   // { '第一堂': {...}, '第二堂': {...} }
+
+  const row   = data[targetRow];
+  const chRe  = /^[\u4e00-\u9fa5]{2,4}$/;  // 純中文名字
+  const results = [];
+
+  for (let c = 0; c < row.length; c++) {
+    const cell = String(row[c]).trim();
+    if (!cell || cell === 'V' || cellToMD(row[c]) === dateParam) continue;
+    if (!chRe.test(cell)) continue;
+
+    const service     = (secondStart >= 0 && c >= secondStart) ? '第二堂' : '第一堂';
+    const collectTime = service === '第一堂' ? '08:10' : '10:10';
+
+    let station = '';
+    for (let sc = c; sc >= 0; sc--) {
+      const s = String(stationRow[sc]).trim();
+      if (s && !/^[\u4e00-\u9fa5]{2,4}$/.test(s) && s !== 'V') { station = s; break; }
     }
 
-    // 手動觸發時略過時間篩選，否則只發給符合時段的訂閱
-    const dueSubs = isManual
-      ? personSubs
-      : personSubs.filter(s => {
-          const ok = shouldNotifyNow(s.notifyTime || '1d_17:30');
-          console.log(`  🔍 ${person.name} notifyTime=${s.notifyTime || '(空，預設 1d_17:30)'} → ${ok ? '符合' : '不符合'}`);
-          return ok;
+    const area = station.includes('4F') || station.includes('四') ? '4F'
+               : station.includes('B1') || station.includes('地下') ? 'B1'
+               : station.includes('1F') || station.includes('一樓') ? '1F'
+               : station.includes('親子') ? '親子' : '';
+    const captain = ((captains[service] || {})[area]) || '';
+
+    results.push({ name: cell, service, station, collectTime, captain });
+  }
+
+  // ── 加入當月總召（每位一則；同一人也排招待時，send-push.js 會合併成一則通知）──
+  const CAPTAIN_COLLECT = { '第一堂': '08:10', '第二堂': '10:10' };   // 總召與招待集合時間相同
+  ['第一堂', '第二堂'].forEach(function(svc) {
+    const m = captains[svc] || {};
+    Object.keys(m).forEach(function(area) {
+      m[area].split(/[、,，\/／]/).forEach(function(n) {
+        n = n.trim();
+        if (!n) return;
+        results.push({ name: n, role: 'captain', service: svc, station: area + ' 總召', collectTime: CAPTAIN_COLLECT[svc], captain: '' });
+      });
+    });
+  });
+
+  return json(results);
+}
+
+// ── 總召表（在「2026」分頁裡：月份 | 4F | 1F | 親子 | B1 | 1F | 親子）──────────
+// B1 之前的欄位 = 第一堂（4F、1F、親子），B1 起 = 第二堂（B1、1F、親子）
+// 名字會去掉所有空白（「容   容」→「容容」）
+const CAPTAIN_AREAS_ = { '4F': 1, '1F': 1, '親子': 1, 'B1': 1 };
+
+function findCaptainTable_(data) {
+  const clean = function(v) { return String(v).replace(/\s+/g, ''); };
+  for (let r = 0; r < data.length; r++) {
+    const i4 = data[r].findIndex(function(v) { return clean(v) === '4F'; });
+    const iB = data[r].findIndex(function(v) { return clean(v) === 'B1'; });
+    if (i4 > 0 && iB > i4) return { hr: r, c4: i4, cB1: iB, monthCol: i4 - 1 };
+  }
+  return null;
+}
+
+function getCaptainsForMonth(month, tab) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab || '2026');
+  if (!sheet) return {};
+  const data = sheet.getDataRange().getValues();
+  const t = findCaptainTable_(data);
+  if (!t) return {};
+
+  const clean = function(v) { return String(v).replace(/\s+/g, ''); };
+  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  const target = monthNames[month - 1];
+  const header = data[t.hr];
+
+  for (let r = t.hr + 1; r < data.length; r++) {
+    if (clean(data[r][t.monthCol]) !== target) continue;
+    const result = { '第一堂': {}, '第二堂': {} };
+    for (let c = t.c4; c < header.length; c++) {
+      const area = clean(header[c]);
+      if (!CAPTAIN_AREAS_[area]) break;          // 只收 4F／1F／親子／B1，遇到其他欄位就停（避免讀到同一列右邊的別的資料）
+      const name = clean(data[r][c]);
+      if (!name) continue;
+      result[c < t.cB1 ? '第一堂' : '第二堂'][area] = name;
+    }
+    return result;
+  }
+  return {};
+}
+
+function getCaptainNames() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('2026');
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const t = findCaptainTable_(data);
+  if (!t) return [];
+  const clean = function(v) { return String(v).replace(/\s+/g, ''); };
+  const set = {};
+  for (let r = t.hr + 1; r < data.length; r++) {
+    if (!/月$/.test(clean(data[r][t.monthCol]))) break;
+    for (let c = t.c4; c < data[t.hr].length; c++) {
+      if (!CAPTAIN_AREAS_[clean(data[t.hr][c])]) break;
+      const n = clean(data[r][c]);
+      if (n) set[n] = true;
+    }
+  }
+  return Object.keys(set);
+}
+
+// ── 訂閱選單的同工名單（投入名單分頁 + 總召）──────────────────────────────
+function getNames() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('投入名單');
+  const nameSet = new Set();
+
+  if (sheet) {
+    const data = sheet.getDataRange().getValues();
+    const INCLUDE = new Set(['穩定投入', '新加入', '回歸']);
+
+    // 找標題列：含有「姓名」的列
+    let headerRow = -1;
+    const nameCols   = []; // 姓名欄 index
+    const statusCols = []; // 對應投入狀態欄 index
+
+    for (let r = 0; r < Math.min(10, data.length); r++) {
+      const row = data[r];
+      const nameIdxs = [];
+      for (let c = 0; c < row.length; c++) {
+        if (String(row[c]).trim() === '姓名') nameIdxs.push(c);
+      }
+      if (nameIdxs.length > 0) {
+        headerRow = r;
+        nameIdxs.forEach(function(nc) {
+          for (let c = nc + 1; c < Math.min(nc + 5, row.length); c++) {
+            if (String(row[c]).trim() === '投入狀態') {
+              nameCols.push(nc);
+              statusCols.push(c);
+              break;
+            }
+          }
         });
-    if (dueSubs.length === 0) {
-      console.log(`  ⏭  ${person.name}（不在通知時段）`);
-      skipped++;
-      continue;
+        break;
+      }
     }
 
-    for (const sub of dueSubs) {
-      const p256dhB64 = toBase64(sub.p256dh);
-      const authB64   = toBase64(sub.auth);
-      const keyLen = Buffer.from(p256dhB64, 'base64').length;
-      console.log(`  🔑 p256dh decoded: ${keyLen} bytes`);
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: p256dhB64, auth: authB64 } },
-          payload
-        );
-        console.log(`  ✅ ${person.name} → ${summary}`);
-        sent++;
-      } catch (err) {
-        console.error(`  ❌ ${person.name} 失敗：${err.message}`);
-        failed++;
+    if (headerRow >= 0) {
+      for (let r = headerRow + 1; r < data.length; r++) {
+        for (let i = 0; i < nameCols.length; i++) {
+          const name   = String(data[r][nameCols[i]]).trim();
+          const status = String(data[r][statusCols[i]]).trim();
+          if (name && name.length >= 2 && INCLUDE.has(status)) {
+            // 去掉括號備註，如「李欣彤(維萍姐)」→「李欣彤」
+            nameSet.add(name.replace(/[（(].+?[）)]/g, '').trim());
+          }
+        }
       }
     }
   }
 
-  console.log(`\n完成：送出 ${sent}，略過 ${skipped}，失敗 ${failed}`);
+  // 總召（來自 2026 分頁的總召表）
+  getCaptainNames().forEach(function(n) { nameSet.add(n); });
+
+  return json({ names: Array.from(nameSet).sort() });
 }
 
-main().catch(err => {
-  console.error('執行錯誤：', err);
-  process.exit(1);
-});
+// ── 除錯用（在編輯器手動執行，看「執行記錄」）──────────────────────────────
+function debugSubs() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Subscriptions');
+  if (!sheet) { Logger.log('❌ 找不到 Subscriptions sheet'); return; }
+  Logger.log('✅ lastRow: ' + sheet.getLastRow());
+  sheet.getDataRange().getValues().forEach(function(r, i) { Logger.log('row ' + i + ': ' + JSON.stringify(r)); });
+}
+
+function debugCaptains() {
+  Logger.log(JSON.stringify(getCaptainsForMonth(11)));
+  Logger.log(JSON.stringify(getCaptainNames()));
+}
+
+// 小工具：回傳 JSON response
+function json(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
