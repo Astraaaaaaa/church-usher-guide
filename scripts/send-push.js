@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * 每週六服事提醒推播腳本
- * 由 GitHub Actions 在台北時間每週六 17:30 執行
+ * 服事提醒推播腳本（主日招待 + 禱告會招待）
+ * 由 cron-job.org → repository_dispatch 觸發
+ * MODE：sunday（只跑主日）／prayer（只跑禱告會）／空白或 all（兩者都跑）
  */
 
 const webpush = require('web-push');
@@ -17,106 +18,144 @@ if (!VAPID_PUBLIC || !VAPID_PRIVATE || !GAS_URL) {
 
 webpush.setVapidDetails('mailto:chiehastra@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
-// 從全名去掉姓（第一個字）
+const MODE       = (process.env.MODE || '').trim() || 'all';
+const RUN_SUNDAY = MODE === 'sunday' || MODE === 'all';
+const RUN_PRAYER = MODE === 'prayer' || MODE === 'all';
+// 只有人工在 GitHub 按「Run workflow」才略過篩選；勾「照訂閱時間篩選」則不略過
+const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' && process.env.RESPECT_SCHEDULE !== 'true';
+
+const CAPTAIN_COLLECT = { '第一堂': '08:10', '第二堂': '10:10' };
+const CLOSING = '感謝您的擺上～主日見！';
+const WEEKDAY_ZH = ['日', '一', '二', '三', '四', '五', '六'];
+
+// ── 工具函式 ────────────────────────────────────────────────────────────
+const norm = n => String(n || '').replace(/\s+/g, '');
+
 function firstName(fullName) {
   const n = fullName.trim();
-  // 兩個字（含以下）的名字不去姓；帶空格（如「容   容」）或稱謂（姐/哥/師）也直接用原名
   if (n.length <= 2 || /\s/.test(n) || /[姐哥師]$/.test(n)) return n;
   return n.slice(1);
 }
 
-// 總召集合時間（與招待相同）；直接在這裡指定，不依賴 GAS 回傳的時間
-const CAPTAIN_COLLECT = { '第一堂': '08:10', '第二堂': '10:10' };
-
-// 通知結尾語
-const CLOSING = '感謝您的擺上～主日見！';
-
-// 名字統一去掉所有空白，才能對上不同分頁的寫法（例如「容   容」「容容」）
-const norm = n => String(n || '').replace(/\s+/g, '');
-
-// 取得台北時間現在的 weekday(0=Sun) 和 HH:MM
 function getTaipeiNow() {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-  return { weekday: now.getDay(), hour: String(now.getHours()).padStart(2,'0'), minute: String(now.getMinutes()).padStart(2,'0') };
+  return {
+    year: now.getFullYear(),
+    month: now.getMonth() + 1,
+    day: now.getDate(),
+    weekday: now.getDay(),
+    hour: String(now.getHours()).padStart(2, '0'),
+    minute: String(now.getMinutes()).padStart(2, '0'),
+  };
 }
 
-// 判斷訂閱者的 notifyTime 是否符合目前執行時間
-// notifyTime 格式："2d_17:30" 表示主日前2天 17:30 通知
-// 主日 weekday=0，前1天=週六(6)，前2天=週五(5)，前3天=週四(4)
-function shouldNotifyNow(notifyTime) {
-  const { weekday, hour, minute } = getTaipeiNow();
-  const currentTime = `${hour}:${minute}`;
+function nowMinutes() {
+  const { hour, minute } = getTaipeiNow();
+  return parseInt(hour) * 60 + parseInt(minute);
+}
 
-  // 相容舊格式（純時間字串，如 "17:30"）→ 預設週六前1天
-  if (!notifyTime.includes('d_')) {
-    return weekday === 6 && currentTime >= notifyTime && currentTime <= notifyTime.replace(/(\d+)$/, m => String(parseInt(m)+10).padStart(2,'0'));
-  }
-
-  const [daysPart, timePart] = notifyTime.split('d_'); // e.g. "2", "17:30"
-  const targetWeekday = (7 - parseInt(daysPart)) % 7; // 前1天=6(六), 前2天=5(五), 前3天=4(四)
-  if (weekday !== targetWeekday) return false;
-
-  // 整點後 0～15 分鐘內才發（容許 GitHub cron 延遲，但不提前）
-  const [th, tm] = timePart.split(':').map(Number);
-  const targetMin = th * 60 + tm;
-  const nowMin = parseInt(hour) * 60 + parseInt(minute);
-  const diff = nowMin - targetMin;
+// 現在是否落在目標時間窗口（早 2 分 ~ 晚 15 分，容許 GitHub 啟動延遲）
+function inWindow(targetMin) {
+  const diff = nowMinutes() - targetMin;
   return diff >= -2 && diff <= 15;
 }
 
-// 取得下週日日期字串 MM/DD（台北時間）
+// notifyTime "1d_17:00" → { days, targetMin }；舊格式 "HH:MM" 視為前1天
+function parseNotify(notifyTime) {
+  const nt = notifyTime || '1d_17:30';
+  let days = 1, timePart = nt;
+  if (nt.includes('d_')) {
+    const [d, t] = nt.split('d_');
+    days = parseInt(d);
+    timePart = t;
+  }
+  const [th, tm] = timePart.split(':').map(Number);
+  return { days, targetMin: th * 60 + tm };
+}
+
+// 主日：前1天=週六、前2天=週五、當天=週日
+function shouldNotifyNow(notifyTime) {
+  const { weekday } = getTaipeiNow();
+  const { days, targetMin } = parseNotify(notifyTime);
+  return weekday === (7 - days) % 7 && inWindow(targetMin);
+}
+
+function todayStr() {
+  const { month, day } = getTaipeiNow();
+  return String(month).padStart(2, '0') + '/' + String(day).padStart(2, '0');
+}
+
+// 下一個主日（週日當天則是 7 天後）
 function nextSundayStr() {
   const tw = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
   const daysUntil = tw.getDay() === 0 ? 7 : 7 - tw.getDay();
   tw.setDate(tw.getDate() + daysUntil);
-  const m = String(tw.getMonth() + 1).padStart(2, '0');
-  const d = String(tw.getDate()).padStart(2, '0');
-  return `${m}/${d}`;
+  return String(tw.getMonth() + 1).padStart(2, '0') + '/' + String(tw.getDate()).padStart(2, '0');
 }
 
-// base64url → 標準 base64（補齊 padding，web-push 內部用 Buffer.from(...,'base64') 解碼）
 function toBase64(str) {
   let s = (str || '').replace(/-/g, '+').replace(/_/g, '/');
   while (s.length % 4 !== 0) s += '=';
   return s;
 }
 
-async function main() {
-  const dateStr = process.argv[2] || nextSundayStr();
-  // 手動觸發（workflow_dispatch）時跳過時間篩選
-  // 只有人工在 GitHub 按「Run workflow」才略過篩選；cron-job.org 的 repository_dispatch 仍要照訂閱時間篩選
-  // 手動執行時若勾選「照訂閱時間篩選」(RESPECT_SCHEDULE=true)，就不略過篩選
-  const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' && process.env.RESPECT_SCHEDULE !== 'true';
-  if (isManual) console.log('🔧 手動觸發，略過時間篩選');
-  { const t = getTaipeiNow(); console.log(`🕒 觸發來源：${process.env.GITHUB_EVENT_NAME || '本機'}｜台北時間：週${t.weekday} ${t.hour}:${t.minute}｜isManual=${isManual}`); }
+async function pushTo(sub, payload, label) {
+  const p256dh = toBase64(sub.p256dh);
+  const auth   = toBase64(sub.auth);
+  if (Buffer.from(p256dh, 'base64').length !== 65) {
+    console.warn(`  ⚠️  ${label} p256dh 長度異常，略過`);
+    return false;
+  }
+  try {
+    await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh, auth } }, payload);
+    console.log(`  ✅ ${label}`);
+    return true;
+  } catch (err) {
+    console.error(`  ❌ ${label}：${err.message}`);
+    return false;
+  }
+}
+
+function buildSubMap(subs) {
+  const map = {};
+  subs.forEach(s => { (map[norm(s.name)] ||= []).push(s); });
+  return map;
+}
+
+// 解析 GAS 回傳的日期（ISO UTC 字串 或 YYYY/MM/DD）→ Date（台北時間）
+function parsePrayerDate(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  if (s.includes('T')) return new Date(new Date(s).toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  const m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+  return null;
+}
+
+// 就位時間：只接受 "HH:MM" 文字，其他（例如時間格式被轉成 ISO）一律用 18:50
+function parsePrayerTime(val) {
+  const s = String(val || '').trim();
+  return /^\d{1,2}:\d{2}$/.test(s) ? s : '18:50';
+}
+
+// ── 主日招待 ────────────────────────────────────────────────────────────
+async function runSunday(subs) {
+  console.log('\n⛪ ===== 主日招待提醒 =====');
+  const { weekday } = getTaipeiNow();
+  // 週日當天查「今天」，其他天查「下個主日」
+  const dateStr = process.argv[2] || (weekday === 0 ? todayStr() : nextSundayStr());
   console.log(`📅 查詢日期：${dateStr}`);
 
-  // 1. 取輪值
-  const schedRes = await fetch(`${GAS_URL}?action=schedule&date=${dateStr}`);
-  const schedule = await schedRes.json();
+  const schedule = await (await fetch(`${GAS_URL}?action=schedule&date=${dateStr}`)).json();
   console.log(`📋 排班人數：${schedule.length}`);
-
   if (schedule.length === 0) {
-    console.log('⚠️  當日無排班資料，結束。');
+    console.log('⚠️  當日無主日排班資料，略過主日提醒。');
     return;
   }
 
-  // 2. 取訂閱
-  const subsRes = await fetch(`${GAS_URL}?action=subscriptions`);
-  const subs    = await subsRes.json();
-  console.log(`🔔 訂閱人數：${subs.length}`);
+  const subMap = buildSubMap(subs);
 
-  const subMap = {};
-  subs.forEach(s => {
-    const k = norm(s.name);
-    if (!subMap[k]) subMap[k] = [];
-    subMap[k].push(s);
-  });
-
-  // 3. 發送推播
-  let sent = 0, skipped = 0, failed = 0;
-
-  // 同一個人當天可能有多筆（兩堂招待，或「總召＋招待」）→ 合併成一則通知，避免後一則蓋掉前一則
+  // 同一人可能有多筆（兩堂、總召＋招待）→ 合併成一則
   const groups = new Map();
   schedule.forEach(e => {
     const k = norm(e.name);
@@ -125,30 +164,41 @@ async function main() {
     groups.get(k).push(e);
   });
 
-  // 日期顯示 yyyy.mm.dd：年份由台北今天推算（跨年時 12 月看 01 月＝明年）
+  // 日期顯示 yyyy.mm.dd
   const [mm, dd] = dateStr.split('/').map(Number);
-  const twNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-  let year = twNow.getFullYear();
-  const nowM = twNow.getMonth() + 1;
-  if (mm < nowM - 6) year += 1;
-  else if (mm > nowM + 6) year -= 1;
-  const weekday = '日一二三四五六'[new Date(year, mm - 1, dd).getDay()];   // 依日期自動算星期
-  const dateLabel = `${year}.${String(mm).padStart(2, '0')}.${String(dd).padStart(2, '0')}（${weekday}）`;
+  const twNow = getTaipeiNow();
+  let year = twNow.year;
+  if (mm < twNow.month - 6) year += 1;
+  else if (mm > twNow.month + 6) year -= 1;
+  const wd = WEEKDAY_ZH[new Date(year, mm - 1, dd).getDay()];
+  const dateLabel = `${year}.${String(mm).padStart(2, '0')}.${String(dd).padStart(2, '0')}（${wd}）`;
+
+  const place = e => `📍${e.service}｜${e.station}`;
+  const when = e => e.role === 'captain'
+    ? `⏰${CAPTAIN_COLLECT[e.service] || e.collectTime} 抵達集合招待`
+    : `⏰${e.collectTime} ${e.captain ? '請找' + e.captain : '請找總召'}集合`;
+
+  let sent = 0, skipped = 0, failed = 0;
 
   for (const [name, entries] of groups) {
-    const person = { name };
-    // 問候語：總召用稱呼（欣芳姐），招待用全名去姓
+    const personSubs = subMap[name] || [];
+    if (!personSubs.length) { console.log(`  ⏭  ${name}（無訂閱）`); skipped++; continue; }
+
+    const dueSubs = isManual
+      ? personSubs
+      : personSubs.filter(s => {
+          const ok = shouldNotifyNow(s.notifyTime);
+          console.log(`  🔍 ${name} notifyTime=${s.notifyTime || '(空，預設 1d_17:30)'} → ${ok ? '符合' : '不符合'}`);
+          return ok;
+        });
+    if (!dueSubs.length) { console.log(`  ⏭  ${name}（不在通知時段）`); skipped++; continue; }
+
     const aliasEntry = entries.find(e => e.alias);
     const fname = aliasEntry ? aliasEntry.alias : firstName(name);
-    // 每個服事兩行：📍 堂次｜站位　⏰ 時間／集合對象
-    const place = e => `📍${e.service}｜${e.station}`;
-    const when  = e => e.role === 'captain'
-      ? `⏰${CAPTAIN_COLLECT[e.service] || e.collectTime} 抵達集合招待`
-      : `⏰${e.collectTime} ${e.captain ? '請找' + e.captain : '請找總召'}集合`;
+    const greet = `${fname} 平安～`;
     const summary = entries.map(e => `${e.service} ${e.station}`).join(' + ');
 
-    const greet = `${fname} 平安～`;
-    let body, title;
+    let title, body;
     if (entries.length === 1) {
       const e = entries[0];
       body = `${greet}\n${place(e)} ${when(e)}\n${CLOSING}`;
@@ -162,47 +212,124 @@ async function main() {
     }
     const payload = JSON.stringify({ title, body, url: '/roster.html' });
 
-    const personSubs = subMap[name] || [];
-    if (personSubs.length === 0) {
-      console.log(`  ⏭  ${person.name}（無訂閱）`);
-      skipped++;
-      continue;
-    }
+    for (const sub of dueSubs) (await pushTo(sub, payload, `${name} → ${summary}`)) ? sent++ : failed++;
+  }
+  console.log(`主日提醒完成：送出 ${sent}，略過 ${skipped}，失敗 ${failed}`);
 
-    // 手動觸發時略過時間篩選，否則只發給符合時段的訂閱
-    const dueSubs = isManual
-      ? personSubs
-      : personSubs.filter(s => {
-          const ok = shouldNotifyNow(s.notifyTime || '1d_17:30');
-          console.log(`  🔍 ${person.name} notifyTime=${s.notifyTime || '(空，預設 1d_17:30)'} → ${ok ? '符合' : '不符合'}`);
+  // ── 週日當天：「服事當天也提醒我」（第一堂 08:00、第二堂 10:00）──
+  if (weekday === 0) {
+    console.log('\n🔔 週日：檢查「服事當天也提醒我」…');
+    const REMIND_AT = { '第一堂': 8 * 60, '第二堂': 10 * 60 };
+    let rSent = 0, rSkip = 0;
+
+    for (const [name, entries] of groups) {
+      // 勾選當天提醒、且這個時段沒有被上面的主日提醒發過（避免同一小時收兩則）
+      const rSubs = (subMap[name] || []).filter(s =>
+        (s.remindBeforeService === true || s.remindBeforeService === '1') &&
+        (isManual || !shouldNotifyNow(s.notifyTime)));
+      if (!rSubs.length) continue;
+
+      const due = entries.filter(e => {
+        const t = REMIND_AT[e.service];
+        return t !== undefined && (isManual || inWindow(t));
+      });
+      if (!due.length) { rSkip++; continue; }
+
+      const aliasEntry = entries.find(e => e.alias);
+      const fname = aliasEntry ? aliasEntry.alias : firstName(name);
+      const body = `${fname} 平安～\n` + due.map(e => `${place(e)} ${when(e)}`).join('\n') + `\n記得準時集合禱告！`;
+      const payload = JSON.stringify({ title: `${dateLabel} 服事提醒`, body, url: '/roster.html' });
+      for (const sub of rSubs) if (await pushTo(sub, payload, `[當天] ${name} → ${due.map(e => e.service).join('、')}`)) rSent++;
+    }
+    console.log(`當天提醒：送出 ${rSent}，略過 ${rSkip}`);
+  }
+}
+
+// ── 禱告會招待（週一）────────────────────────────────────────────────────
+async function runPrayer(subs) {
+  console.log('\n🙏 ===== 禱告會招待提醒 =====');
+  const { weekday, year, month, day } = getTaipeiNow();
+
+  const pRes  = await fetch(`${GAS_URL}?tab=${encodeURIComponent('禱告會')}`);
+  const pRows = pRes.ok ? await pRes.json() : [];
+  console.log(`📋 禱告會分頁列數：${pRows.length}`);
+
+  const findPrayer = date => pRows.slice(1).find(row => {
+    const d = parsePrayerDate(row[0]);
+    return d && d.getFullYear() === date.getFullYear()
+             && d.getMonth() === date.getMonth()
+             && d.getDate() === date.getDate();
+  });
+  const mmdd = date => String(date.getMonth() + 1).padStart(2, '0') + '/' + String(date.getDate()).padStart(2, '0');
+  const matchSubs = worker => {
+    const full = norm(worker);
+    const stripped = full.replace(/[姐哥師]$/, '');
+    return subs.filter(s => { const k = norm(s.name); return k === full || k === stripped; });
+  };
+
+  // A. 提前提醒：依訂閱者「服事前 N 天」，目標是下個週一
+  //    週日 = 前1天、週六 = 前2天
+  const daysUntilMonday = ((1 - weekday) + 7) % 7 || 7;
+  if (daysUntilMonday === 1 || daysUntilMonday === 2) {
+    const nextMon = new Date(year, month - 1, day + daysUntilMonday);
+    const adv = findPrayer(nextMon);
+    if (!adv) {
+      console.log(`  （${mmdd(nextMon)} 無禱告會排班）`);
+    } else {
+      const workers = [String(adv[1] || '').trim(), String(adv[2] || '').trim()].filter(Boolean);
+      const pTime = parsePrayerTime(adv[3]);
+      console.log(`  提前提醒對象：${workers.join('、')} @ ${mmdd(nextMon)} ${pTime}`);
+
+      for (const worker of workers) {
+        const dueSubs = matchSubs(worker).filter(s => {
+          if (isManual) return true;
+          const { days, targetMin } = parseNotify(s.notifyTime);
+          const ok = days === daysUntilMonday && inWindow(targetMin);
+          console.log(`  🔍 ${worker} notifyTime=${s.notifyTime} → ${ok ? '符合' : '不符合'}`);
           return ok;
         });
-    if (dueSubs.length === 0) {
-      console.log(`  ⏭  ${person.name}（不在通知時段）`);
-      skipped++;
-      continue;
-    }
+        if (!dueSubs.length) { console.log(`  ⏭  ${worker}（無訂閱或不在通知時段）`); continue; }
 
-    for (const sub of dueSubs) {
-      const p256dhB64 = toBase64(sub.p256dh);
-      const authB64   = toBase64(sub.auth);
-      const keyLen = Buffer.from(p256dhB64, 'base64').length;
-      console.log(`  🔑 p256dh decoded: ${keyLen} bytes`);
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: p256dhB64, auth: authB64 } },
-          payload
-        );
-        console.log(`  ✅ ${person.name} → ${summary}`);
-        sent++;
-      } catch (err) {
-        console.error(`  ❌ ${person.name} 失敗：${err.message}`);
-        failed++;
+        const body = `${firstName(norm(worker))} 平安！ ${mmdd(nextMon)}（一）禱告會 ⏰ ${pTime}\n記得準時到四樓、到了可以直接發禱告單 ✨`;
+        const payload = JSON.stringify({ title: '🙏 禱告會招待提醒', body, url: '/' });
+        for (const sub of dueSubs) await pushTo(sub, payload, `[禱告會提前] ${worker}`);
       }
     }
+  } else {
+    console.log('  （今天不在提前提醒範圍，只有週六、週日會發）');
   }
 
-  console.log(`\n完成：送出 ${sent}，略過 ${skipped}，失敗 ${failed}`);
+  // B. 當天提醒：週一 18:00，發給所有有訂閱的同工
+  const t = getTaipeiNow();
+  const isMondayEvening = weekday === 1 && (isManual || (parseInt(t.hour) === 18 && parseInt(t.minute) <= 30));
+  if (!isMondayEvening) { console.log('  （現在不是週一 18:00，略過當天提醒）'); return; }
+
+  const todayPrayer = findPrayer(new Date(year, month - 1, day));
+  if (!todayPrayer) { console.log('  （今天無禱告會排班）'); return; }
+
+  const workers = [String(todayPrayer[1] || '').trim(), String(todayPrayer[2] || '').trim()].filter(Boolean);
+  const pTime = parsePrayerTime(todayPrayer[3]);
+  console.log(`  當天提醒對象：${workers.join('、')} @ ${pTime}`);
+
+  for (const worker of workers) {
+    const ms = matchSubs(worker);
+    if (!ms.length) { console.log(`  ⏭  ${worker}（無訂閱）`); continue; }
+    const body = `${firstName(norm(worker))} 平安！ 記得${pTime}到四樓發禱告單給大家 ✨\n別忘了在記事本回報人數，謝謝！`;
+    const payload = JSON.stringify({ title: '🙏 禱告會招待提醒', body, url: '/' });
+    for (const sub of ms) await pushTo(sub, payload, `[禱告會當天] ${worker}`);
+  }
+}
+
+// ── 主程式 ──────────────────────────────────────────────────────────────
+async function main() {
+  const t = getTaipeiNow();
+  console.log(`🕒 來源:${process.env.GITHUB_EVENT_NAME || '本機'}｜MODE=${MODE}｜台北:週${WEEKDAY_ZH[t.weekday]} ${t.hour}:${t.minute}｜isManual=${isManual}`);
+
+  const subs = await (await fetch(`${GAS_URL}?action=subscriptions`)).json();
+  console.log(`🔔 訂閱人數：${subs.length}`);
+
+  if (RUN_SUNDAY) await runSunday(subs);
+  if (RUN_PRAYER) await runPrayer(subs);
 }
 
 main().catch(err => {

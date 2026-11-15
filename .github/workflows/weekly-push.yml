@@ -29,4 +29,6 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           GAS_URL:           ${{ secrets.GAS_URL }}
           RESPECT_SCHEDULE:  ${{ inputs.respect_schedule }}
+
+          MODE:              ${{ github.event.client_payload.mode }}
         run: node scripts/send-push.js
