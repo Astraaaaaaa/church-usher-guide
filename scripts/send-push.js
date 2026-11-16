@@ -268,9 +268,9 @@ async function runPrayer(subs) {
   };
 
   // A. 提前提醒：依訂閱者「服事前 N 天」，目標是下個週一
-  //    週日 = 前1天、週六 = 前2天
+  //    週日 = 前1天、週六 = 前2天；週一本身不跑這段
   const daysUntilMonday = ((1 - weekday) + 7) % 7 || 7;
-  if (daysUntilMonday === 1 || daysUntilMonday === 2) {
+  if (weekday !== 1 && (daysUntilMonday === 1 || daysUntilMonday === 2)) {
     const nextMon = new Date(year, month - 1, day + daysUntilMonday);
     const adv = findPrayer(nextMon);
     if (!adv) {
@@ -295,7 +295,7 @@ async function runPrayer(subs) {
         for (const sub of dueSubs) await pushTo(sub, payload, `[禱告會提前] ${worker}`);
       }
     }
-  } else {
+  } else if (weekday !== 1) {
     console.log('  （今天不在提前提醒範圍，只有週六、週日會發）');
   }
 
