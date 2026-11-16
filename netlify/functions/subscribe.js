@@ -64,13 +64,15 @@ exports.handler = async function (event) {
       return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ error: '缺少姓名或訂閱資訊' }) };
     }
 
+    const hasSameday = (notifyTime || '').includes('|sameday');
     const url = GAS_URL
       + '?action=subscribe'
-      + '&name='       + encodeURIComponent(name)
-      + '&notifyTime=' + encodeURIComponent(notifyTime || '17:30')
-      + '&endpoint='   + encodeURIComponent(subscription.endpoint)
-      + '&p256dh='     + encodeURIComponent(subscription.keys.p256dh)
-      + '&auth='       + encodeURIComponent(subscription.keys.auth);
+      + '&name='                + encodeURIComponent(name)
+      + '&notifyTime='          + encodeURIComponent(notifyTime || '17:30')
+      + '&remindBeforeService=' + (hasSameday ? '1' : '0')
+      + '&endpoint='            + encodeURIComponent(subscription.endpoint)
+      + '&p256dh='              + encodeURIComponent(subscription.keys.p256dh)
+      + '&auth='                + encodeURIComponent(subscription.keys.auth);
 
     await fetch(url, { redirect: 'follow' });
     // 訂閱成功後立即發 welcome push 確認通知

@@ -483,7 +483,10 @@
       服事當天也提醒我
     </label>
     <button onclick="doSubscribe()" id="subscribe-confirm-btn" style="width:100%;background:#1A3A5C;color:#fff;border:none;border-radius:20px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">確認訂閱</button>
-    <div id="subscribe-status" style="margin-top:10px;font-size:12px;text-align:center;color:#7A8E9E;min-height:18px;"></div>
+    <div id="subscribe-status" style="margin-top:8px;font-size:12px;text-align:center;color:#7A8E9E;min-height:16px;"></div>
+    <div id="subscribe-cancel-row" style="display:none;text-align:center;margin-top:4px;">
+      <button onclick="doCancelSubscription()" style="background:none;border:none;color:#9aaab8;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0;">取消訂閱提醒</button>
+    </div>
   </div>
 </div>
 
@@ -1700,9 +1703,10 @@ window.openSubscribeModal = async function() {
   document.getElementById('name-check-icon').style.display = 'none';
   document.getElementById('name-dropdown').style.display = '';
   document.getElementById('name-dropdown').innerHTML = '<div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">載入中…</div>';
+  document.getElementById('subscribe-cancel-row').style.display = 'none';
   _subscribedState = null;
   const btn = document.getElementById('subscribe-confirm-btn');
-  btn.textContent = '確認訂閱'; btn.style.background = '#1A3A5C'; btn.disabled = false;
+  btn.textContent = '確認訂閱'; btn.style.background = '#1A3A5C'; btn.style.opacity = '1'; btn.disabled = false;
   document.getElementById('subscribe-status').textContent = '';
   _nameList = [];
   try {
@@ -1713,7 +1717,41 @@ window.openSubscribeModal = async function() {
     renderNameList('');
   } catch(e) {
     document.getElementById('name-dropdown').innerHTML = '<div style="padding:10px 12px;font-size:13px;color:#e57373;">載入失敗，請重試</div>';
+    return;
   }
+
+  // 嘗試帶入上次訂閱的設定
+  try {
+    const savedRaw = localStorage.getItem('pushSettings');
+    if (!savedRaw) return;
+    const saved = JSON.parse(savedRaw);
+    const reg = await navigator.serviceWorker.ready;
+    const existingSub = await reg.pushManager.getSubscription();
+    if (!existingSub) { localStorage.removeItem('pushSettings'); return; }
+
+    // 帶入名字
+    if (saved.name && _nameList.includes(saved.name)) {
+      document.getElementById('subscribe-name').value = saved.name;
+      document.getElementById('subscribe-name-input').value = saved.name;
+      document.getElementById('name-check-icon').style.display = '';
+      document.getElementById('name-dropdown').style.display = 'none';
+    }
+    // 帶入時間設定
+    if (saved.days) document.getElementById('subscribe-days').value = saved.days;
+    if (saved.time) document.getElementById('subscribe-time').value = saved.time;
+    document.getElementById('subscribe-sameday').checked = !!saved.sameday;
+
+    // 設為已訂閱狀態
+    _subscribedState = { name: saved.name, days: saved.days || '2', time: saved.time || '20:00', sameday: !!saved.sameday };
+    btn.textContent = '已訂閱 ✓';
+    btn.style.background = '#2a7a4a';
+    btn.disabled = true;
+    const dayLabel = {'1':'週六','2':'週五','3':'週四'}[saved.days] || '';
+    document.getElementById('subscribe-status').style.color = '#2a7a4a';
+    document.getElementById('subscribe-status').textContent =
+      `✅ 有排班時會在${dayLabel} ${saved.time} 通知你` + (saved.sameday ? '，服事當天也會提醒' : '');
+    document.getElementById('subscribe-cancel-row').style.display = '';
+  } catch(e) { /* 無訂閱或 SW 未就緒，不影響正常開啟 */ }
 };
 
 window.filterNameList = function(q) {
@@ -1735,6 +1773,41 @@ window.selectName = function(name) {
 window.closeSubscribeModal = function() {
   document.getElementById('subscribe-modal').style.display = 'none';
   document.getElementById('subscribe-status').textContent = '';
+};
+
+window.doCancelSubscription = async function() {
+  const btn = document.getElementById('subscribe-confirm-btn');
+  const statusEl = document.getElementById('subscribe-status');
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await fetch('/.netlify/functions/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unsubscribe', endpoint: sub.endpoint }),
+      });
+      await sub.unsubscribe();
+    }
+    localStorage.removeItem('pushSettings');
+    _subscribedState = null;
+    btn.textContent = '確認訂閱';
+    btn.style.background = '#1A3A5C';
+    btn.style.opacity = '1';
+    btn.disabled = false;
+    statusEl.style.color = '#7A8E9E';
+    statusEl.textContent = '已取消訂閱';
+    document.getElementById('subscribe-cancel-row').style.display = 'none';
+    document.getElementById('subscribe-name').value = '';
+    document.getElementById('subscribe-name-input').value = '';
+    document.getElementById('name-check-icon').style.display = 'none';
+    document.getElementById('name-dropdown').style.display = '';
+    renderNameList('');
+    refreshPushButtons();
+  } catch(e) {
+    statusEl.style.color = '#e57373';
+    statusEl.textContent = '取消失敗，請重試';
+  }
 };
 
 window.doSubscribe = async function() {
@@ -1778,11 +1851,13 @@ window.doSubscribe = async function() {
     if (!res.ok) throw new Error('伺服器錯誤');
     const isUpdate = !!_subscribedState;
     _subscribedState = { name, days: notifyDays, time: notifyHour, sameday };
+    localStorage.setItem('pushSettings', JSON.stringify(_subscribedState));
     statusEl.style.color = '#2a7a4a';
     statusEl.textContent = `✅ ${isUpdate ? '已更新！' : '訂閱成功！'}有排班時會在${dayLabel} ${notifyHour} 通知你` + (sameday ? '，服事當天也會提醒' : '');
     btn.textContent = isUpdate ? '已更新 ✓' : '已訂閱 ✓';
     btn.style.background = '#2a7a4a';
     btn.disabled = true;
+    document.getElementById('subscribe-cancel-row').style.display = '';
     refreshPushButtons();
   } catch (err) {
     statusEl.style.color = '#e57373';
