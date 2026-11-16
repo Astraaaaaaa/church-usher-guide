@@ -1810,10 +1810,6 @@ window.doCancelSubscription = async function() {
     statusEl.style.color = '#7A8E9E';
     statusEl.textContent = '已取消訂閱';
     document.getElementById('subscribe-cancel-row').style.display = 'none';
-    document.getElementById('subscribe-name').value = '';
-    document.getElementById('subscribe-name-input').value = '';
-    document.getElementById('name-check-icon').style.display = 'none';
-    hideNameDropdown();
     refreshPushButtons();
   } catch(e) {
     statusEl.style.color = '#e57373';
