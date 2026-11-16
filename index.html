@@ -74,6 +74,12 @@
   img.zoomed { transform: scale(2); transform-origin: top center; transition: transform .3s; z-index: 10; position: relative; }
   .verse-text { font-family: 'Noto Serif TC', serif; font-size: 13px; line-height: 1.8; color: rgba(168,205,232,0.75); }
 
+  /* ── Service Toggle ── */
+  .svc-toggle { display:flex; gap:8px; padding:0 20px 16px; }
+  .svc-toggle-btn { flex:1; padding:9px 0; border-radius:8px; border:1px solid var(--border); background:var(--white); color:var(--text-mid); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .15s,color .15s,border-color .15s; }
+  .svc-toggle-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .svc-toggle-btn:not(.active):hover { background:var(--sky-pale); }
+
   /* ── NAV ── */
   .nav-wrapper {
     background: var(--navy);
@@ -412,7 +418,7 @@
   <h1>主日敬拜招待事奉須知</h1>
   <div class="verse-block">
     <p class="verse-ref">希伯來書 13:1–2</p>
-    <p class="verse-text">你們務要常存弟兄相愛的心。不可忘記用愛心接待客旅，因為曾有接待客旅的，不知不覺就接待了天使。</p>
+    <p class="verse-text">你們務要常存弟兄相愛的心。不可忘記用愛心接待客旅，<br>因為曾有接待客旅的，不知不覺就接待了天使。</p>
   </div>
   <button id="pwa-hint-btn" onclick="handlePWABtn()" style="display:none;margin-top:14px;background:rgba(91,155,213,0.15);border:1px solid rgba(91,155,213,0.3);border-radius:20px;padding:6px 16px;color:var(--sky-light);font-size:12px;cursor:pointer;font-family:inherit;align-items:center;gap:6px;">
     <span>📲</span> 加入手機桌面
