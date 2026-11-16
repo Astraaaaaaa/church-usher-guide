@@ -793,6 +793,11 @@ function switchService(svcId, scroll) {
   });
   loadService(svcId);
 }
+function switchPos(svcId, idx) {
+  const container = document.getElementById(svcId + '-dyn');
+  container.querySelectorAll('.pos-tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === idx));
+  container.querySelectorAll('.pos-panel').forEach((panel, i) => panel.classList.toggle('active', i === idx));
+}
 function toggleBlock(id) {
   document.getElementById(id).classList.toggle('open');
 }
@@ -1471,42 +1476,47 @@ function renderServiceSection(rows, svcId) {
     posMap[k].push(r);
   }
 
-  positions.forEach((pos, idx) => {
-    const posRows = posMap[pos];
-    const emojiMatch = pos.match(/^([\S\u{1F300}-\u{1FFFF}]+)/u);
-    const emoji = emojiMatch ? emojiMatch[1] : null;
-    const meta = (emoji && SVC_META[emoji]) || SVC_META['default'];
-    const blockId = `b${svcNum}-dyn-${idx}`;
+  // Position tab buttons
+  if (positions.length) {
+    html += '<div class="pos-tabs">';
+    positions.forEach((pos, idx) => {
+      const emojiMatch = pos.match(/^([\S\u{1F300}-\u{1FFFF}]+)/u);
+      const emoji = emojiMatch ? emojiMatch[1] : null;
+      const meta = (emoji && SVC_META[emoji]) || SVC_META['default'];
+      const label = `<span class="service-badge ${meta.badgeClass}" style="font-size:11px;padding:2px 7px;">${meta.badgeText}</span>`;
+      html += `<button class="pos-tab-btn${idx===0?' active':''}" onclick="switchPos('${svcId}',${idx})">${emoji||''} ${label}</button>`;
+    });
+    html += '</div>';
 
-    const renderRule = (r) => {
-      const isAlert = r[1] === 'alert';
-      const cls = isAlert ? 'alert-rule' : meta.ruleClass;
-      const style = isAlert ? ' style="margin-top:10px;"' : '';
-      return `<div class="rule-item ${cls}"${style}><span class="rule-n">${r[2]}</span><div style="min-width:0;">${boldify(r[3])}</div></div>`;
-    };
+    // Position panels
+    positions.forEach((pos, idx) => {
+      const posRows = posMap[pos];
+      const emojiMatch = pos.match(/^([\S\u{1F300}-\u{1FFFF}]+)/u);
+      const emoji = emojiMatch ? emojiMatch[1] : null;
+      const meta = (emoji && SVC_META[emoji]) || SVC_META['default'];
 
-    const basic   = posRows.filter(r => r[1] === 'rule');
-    const alerts  = posRows.filter(r => r[1] === 'alert');
-    const advTitle = posRows.find(r  => r[1] === 'adv-title');
-    const advanced = posRows.filter(r => r[1] === 'advanced');
+      const renderRule = (r) => {
+        const isAlert = r[1] === 'alert';
+        const cls = isAlert ? 'alert-rule' : meta.ruleClass;
+        const style = isAlert ? ' style="margin-top:10px;"' : '';
+        return `<div class="rule-item ${cls}"${style}><span class="rule-n">${r[2]}</span><div style="min-width:0;">${boldify(r[3])}</div></div>`;
+      };
 
-    let body = [...basic, ...alerts].map(renderRule).join('\n');
+      const basic    = posRows.filter(r => r[1] === 'rule');
+      const alerts   = posRows.filter(r => r[1] === 'alert');
+      const advTitle = posRows.find(r  => r[1] === 'adv-title');
+      const advanced = posRows.filter(r => r[1] === 'advanced');
 
-    if (advTitle || advanced.length) {
-      body += `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">`;
-      if (advTitle) body += `<div style="font-size:12px;font-weight:500;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:10px;">${advTitle[3]}</div>`;
-      body += advanced.map(renderRule).join('\n') + '</div>';
-    }
+      let body = [...basic, ...alerts].map(renderRule).join('\n');
+      if (advTitle || advanced.length) {
+        body += `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">`;
+        if (advTitle) body += `<div style="font-size:12px;font-weight:500;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:10px;">${advTitle[3]}</div>`;
+        body += advanced.map(renderRule).join('\n') + '</div>';
+      }
 
-    html += `
-    <div class="service-block open" id="${blockId}">
-      <div class="service-block-header" onclick="toggleBlock('${blockId}')">
-        <div class="service-block-title">${pos} <span class="service-badge ${meta.badgeClass}">${meta.badgeText}</span> ${SVC_BADGE[svcId]}</div>
-        <span class="chevron">▾</span>
-      </div>
-      <div class="service-block-body">${body}</div>
-    </div>`;
-  });
+      html += `<div class="pos-panel${idx===0?' active':''}" data-svc="${svcId}" data-idx="${idx}">${body}</div>`;
+    });
+  }
 
   return html;
 }
