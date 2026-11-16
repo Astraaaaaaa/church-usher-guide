@@ -1216,12 +1216,12 @@ function rRender(rows) {
       if (!hasContent) continue;
 
       // 禱告會 section
-      const prayerNames = _prayerMap[label];
-      if (prayerNames?.length) {
+      const prayerData = _prayerMap[label];
+      if (prayerData?.names.length) {
         const lightBg = hexToRgba(color, 0.1);
         html += `<div class="r-prayer" style="background:${lightBg}">
-          <div class="r-prayer-lbl" style="color:${color}">${label} 禱告會（18:50）</div>
-          <div class="r-prayer-names">${prayerNames.join('、')}</div>
+          <div class="r-prayer-lbl" style="color:${color}">${prayerData.date} 禱告會（18:50）</div>
+          <div class="r-prayer-names">${prayerData.names.join('、')}</div>
         </div>`;
       }
 
@@ -1231,7 +1231,7 @@ function rRender(rows) {
       card.dataset.names = [
         ...icsSvcs.flatMap(s => s.posRows.flatMap(p => p.people.map(x => x.name))),
         ...icsSvcs.map(s => s.coordStr).filter(Boolean),
-        ...(prayerNames || []),
+        ...(prayerData?.names || []),
       ].join(' ');
       cards.appendChild(card);
       anyContent = true;
@@ -1317,22 +1317,28 @@ async function loadRoster() {
         .then(r => r.ok ? r.json() : []).catch(() => []),
     ]);
     rForceRefresh = false;
-    // Build prayer map: { 'M/DD': ['name1', 'name2'] }
+    // Build prayer map: key → { date: 'M/DD', names: [...] }
+    // 存 UTC 日期和本地日期兩個 key，確保不同時區環境下都能比對到 roster card label
     _prayerMap = {};
     const DTRE = /^(\d{1,2})\/(\d{2})$/;
     for (const row of prayerRows) {
       const raw = row[0];
-      let d;
+      let utcDate, localDate;
       if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(raw)) {
-        // GAS 在台灣時區，midnight 轉 UTC 會跑到前一天 T16，用 UTC 日期取回正確日期
         const dt = new Date(raw);
-        d = `${dt.getUTCMonth()+1}/${String(dt.getUTCDate()).padStart(2,'0')}`;
+        // UTC 日期 = sheet 裡填入的日期（GAS 以台灣時區 midnight=UTC T16 序列化）
+        utcDate   = `${dt.getUTCMonth()+1}/${String(dt.getUTCDate()).padStart(2,'0')}`;
+        // 本地日期備用（+1 天可能性）
+        localDate = `${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`;
       } else {
-        d = rCellVal(raw);
+        utcDate = localDate = rCellVal(raw);
       }
-      if (!d || !DTRE.test(d)) continue;
+      if (!utcDate || !DTRE.test(utcDate)) continue;
       const names = row.slice(1).map(v => (v || '').trim()).filter(Boolean);
-      if (names.length) _prayerMap[d] = names;
+      if (!names.length) continue;
+      const entry = { date: utcDate, names }; // date = 顯示用（來自 sheet）
+      _prayerMap[utcDate] = entry;
+      if (localDate !== utcDate) _prayerMap[localDate] = entry; // 多存一個 key 以防萬一
     }
     rRender(rows);
   } catch(e) {
