@@ -6,7 +6,7 @@ const HEADERS = {
 };
 
 // 發送 welcome push
-async function sendWelcomePush(subscription, name) {
+async function sendConfirmPush(subscription, name, isUpdate) {
   try {
     const webpush = require('web-push');
     webpush.setVapidDetails(
@@ -15,14 +15,18 @@ async function sendWelcomePush(subscription, name) {
       process.env.VAPID_PRIVATE_KEY
     );
     const firstName = name.replace(/[姐哥師]$/, '').trim();
-    const payload = JSON.stringify({
+    const payload = JSON.stringify(isUpdate ? {
+      title: '✅ 設定已更新',
+      body: `${firstName} 的提醒設定已更新 🔔`,
+      url: '/',
+    } : {
       title: '🔔 訂閱成功',
       body: `${firstName} 平安！有服事排班時會提前通知你 ✨`,
       url: '/',
     });
     await webpush.sendNotification(subscription, payload);
   } catch (e) {
-    console.warn('welcome push 失敗（不影響訂閱）:', e.message);
+    console.warn('confirm push 失敗（不影響訂閱）:', e.message);
   }
 }
 
@@ -58,7 +62,7 @@ exports.handler = async function (event) {
       return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true }) };
     }
 
-    const { name, notifyTime, subscription } = body;
+    const { name, notifyTime, subscription, isUpdate } = body;
 
     if (!name || !subscription || !subscription.endpoint) {
       return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ error: '缺少姓名或訂閱資訊' }) };
@@ -75,8 +79,7 @@ exports.handler = async function (event) {
       + '&auth='                + encodeURIComponent(subscription.keys.auth);
 
     await fetch(url, { redirect: 'follow' });
-    // 訂閱成功後立即發 welcome push 確認通知
-    await sendWelcomePush(subscription, name);
+    await sendConfirmPush(subscription, name, !!isUpdate);
     return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true }) };
   } catch (err) {
     return { statusCode: 500, headers: HEADERS, body: JSON.stringify({ error: err.message }) };

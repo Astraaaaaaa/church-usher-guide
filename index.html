@@ -1856,7 +1856,7 @@ window.doSubscribe = async function() {
     const res = await fetch('/.netlify/functions/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, notifyTime, subscription: sub.toJSON() }),
+      body: JSON.stringify({ name, notifyTime, subscription: sub.toJSON(), isUpdate: !!_subscribedState }),
     });
 
     if (!res.ok) throw new Error('伺服器錯誤');
