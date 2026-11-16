@@ -35,12 +35,12 @@ async function sendConfirmPush(subscription, name, notifyTime, isUpdate) {
     const label = notifyLabel(notifyTime);
     const hasSameday = (notifyTime || '').includes('|sameday');
     const payload = JSON.stringify(isUpdate ? {
-      title: '✅ 設定已更新',
-      body: `${gn} 的提醒已更新，${label} 有排班時會通知你` + (hasSameday ? '，服事當天也會提醒 🔔' : ' 🔔'),
+      title: `✅ ${gn} 設定已更新`,
+      body: `${label} 有排班時會通知您` + (hasSameday ? '，服事當天也會提醒 🔔' : ' 🔔'),
       url: '/',
     } : {
-      title: '🔔 訂閱成功',
-      body: `${gn} 平安！${label} 有排班時會提前通知你` + (hasSameday ? '，服事當天也會提醒 ✨' : ' ✨'),
+      title: `🔔 ${gn} 平安！`,
+      body: `${label} 有排班時會提前通知您` + (hasSameday ? '，服事當天也會提醒 ✨' : ' ✨'),
       url: '/',
     });
     await webpush.sendNotification(subscription, payload);
