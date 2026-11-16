@@ -5,8 +5,25 @@ const HEADERS = {
   'Access-Control-Allow-Origin': '*',
 };
 
-// 發送 welcome push
-async function sendConfirmPush(subscription, name, isUpdate) {
+// 名字去姓（3字以上取後兩字，2字以下或英文全取）
+function givenName(fullName) {
+  const n = (fullName || '').replace(/[姐哥師兄妹]$/, '').trim();
+  if (n.length <= 2 || /\s/.test(n)) return n;
+  return n.slice(1);
+}
+
+// 解析 notifyTime → 中文說明（e.g. "2d_20:00" → "週五 20:00"）
+function notifyLabel(notifyTime) {
+  const nt = (notifyTime || '').split('|')[0];
+  const DAY = { '1': '週六', '2': '週五', '3': '週四' };
+  if (nt.includes('d_')) {
+    const [d, t] = nt.split('d_');
+    return `${DAY[d] || `前${d}天`} ${t}`;
+  }
+  return nt;
+}
+
+async function sendConfirmPush(subscription, name, notifyTime, isUpdate) {
   try {
     const webpush = require('web-push');
     webpush.setVapidDetails(
@@ -14,14 +31,16 @@ async function sendConfirmPush(subscription, name, isUpdate) {
       process.env.VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
     );
-    const firstName = name.replace(/[姐哥師]$/, '').trim();
+    const gn = givenName(name);
+    const label = notifyLabel(notifyTime);
+    const hasSameday = (notifyTime || '').includes('|sameday');
     const payload = JSON.stringify(isUpdate ? {
       title: '✅ 設定已更新',
-      body: `${firstName} 的提醒設定已更新 🔔`,
+      body: `${gn} 的提醒已更新，${label} 有排班時會通知你` + (hasSameday ? '，服事當天也會提醒 🔔' : ' 🔔'),
       url: '/',
     } : {
       title: '🔔 訂閱成功',
-      body: `${firstName} 平安！有服事排班時會提前通知你 ✨`,
+      body: `${gn} 平安！${label} 有排班時會提前通知你 ✨`,
       url: '/',
     });
     await webpush.sendNotification(subscription, payload);
@@ -79,7 +98,7 @@ exports.handler = async function (event) {
       + '&auth='                + encodeURIComponent(subscription.keys.auth);
 
     await fetch(url, { redirect: 'follow' });
-    await sendConfirmPush(subscription, name, !!isUpdate);
+    await sendConfirmPush(subscription, name, notifyTime, !!isUpdate);
     return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true }) };
   } catch (err) {
     return { statusCode: 500, headers: HEADERS, body: JSON.stringify({ error: err.message }) };
