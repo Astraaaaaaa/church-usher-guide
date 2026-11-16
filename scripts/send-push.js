@@ -22,7 +22,12 @@ const MODE       = (process.env.MODE || '').trim() || 'all';
 const RUN_SUNDAY = MODE === 'sunday' || MODE === 'all';
 const RUN_PRAYER = MODE === 'prayer' || MODE === 'all';
 // 只有人工在 GitHub 按「Run workflow」才略過篩選；勾「照訂閱時間篩選」則不略過
-const isManual = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' && process.env.RESPECT_SCHEDULE !== 'true';
+// workflow_dispatch = 手動觸發；repository_dispatch = cron-job.org 外部觸發
+// 兩者都視為「主動觸發」，bypass 時間視窗限制
+const isManual = (
+  process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' ||
+  process.env.GITHUB_EVENT_NAME === 'repository_dispatch'
+) && process.env.RESPECT_SCHEDULE !== 'true';
 
 const CAPTAIN_COLLECT = { '第一堂': '08:10', '第二堂': '10:10' };
 const CLOSING = '感謝您的擺上～主日見！';
@@ -301,7 +306,9 @@ async function runPrayer(subs) {
 
   // B. 當天提醒：週一 18:00，發給所有有訂閱的同工
   const t = getTaipeiNow();
-  const isMondayEvening = weekday === 1 && (isManual || (parseInt(t.hour) === 18 && parseInt(t.minute) <= 30));
+  // MODE=prayer 表示 cron-job.org 專門在週一 18:00 觸發，直接 bypass 時間檢查
+  // MODE=all 由 GitHub Actions 每小時跑，需確認實際是 18:00
+  const isMondayEvening = weekday === 1 && (MODE === 'prayer' || (parseInt(t.hour) === 18 && parseInt(t.minute) <= 30));
   if (!isMondayEvening) { console.log('  （現在不是週一 18:00，略過當天提醒）'); return; }
 
   const todayPrayer = findPrayer(new Date(year, month - 1, day));
