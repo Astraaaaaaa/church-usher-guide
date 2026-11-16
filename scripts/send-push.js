@@ -67,7 +67,7 @@ function inWindow(targetMin) {
 
 // notifyTime "1d_17:00" → { days, targetMin }；舊格式 "HH:MM" 視為前1天
 function parseNotify(notifyTime) {
-  const nt = notifyTime || '1d_17:30';
+  const nt = (notifyTime || '1d_17:30').split('|')[0]; // strip |sameday suffix
   let days = 1, timePart = nt;
   if (nt.includes('d_')) {
     const [d, t] = nt.split('d_');
@@ -76,6 +76,10 @@ function parseNotify(notifyTime) {
   }
   const [th, tm] = timePart.split(':').map(Number);
   return { days, targetMin: th * 60 + tm };
+}
+
+function hasSameday(notifyTime) {
+  return (notifyTime || '').includes('|sameday');
 }
 
 // 主日：前1天=週六、前2天=週五、當天=週日

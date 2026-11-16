@@ -475,6 +475,10 @@
         </select>
       </div>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3D546B;margin-bottom:14px;cursor:pointer;">
+      <input type="checkbox" id="subscribe-sameday" style="width:16px;height:16px;accent-color:#1A3A5C;cursor:pointer;">
+      服事當天也提醒我
+    </label>
     <button onclick="doSubscribe()" id="subscribe-confirm-btn" style="width:100%;background:#1A3A5C;color:#fff;border:none;border-radius:20px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">確認訂閱</button>
     <div id="subscribe-status" style="margin-top:10px;font-size:12px;text-align:center;color:#7A8E9E;min-height:18px;"></div>
   </div>
@@ -1718,7 +1722,8 @@ window.doSubscribe = async function() {
     statusEl.textContent = '儲存訂閱中…';
     const notifyDays = document.getElementById('subscribe-days').value;
     const notifyHour = document.getElementById('subscribe-time').value;
-    const notifyTime = notifyDays + 'd_' + notifyHour; // e.g. "2d_17:30"
+    const sameday = document.getElementById('subscribe-sameday').checked;
+    const notifyTime = notifyDays + 'd_' + notifyHour + (sameday ? '|sameday' : ''); // e.g. "2d_17:30" or "2d_17:30|sameday"
     const dayLabel = {'1':'週六','2':'週五','3':'週四'}[notifyDays] || '';
     const res = await fetch('/.netlify/functions/subscribe', {
       method: 'POST',
@@ -1728,7 +1733,7 @@ window.doSubscribe = async function() {
 
     if (!res.ok) throw new Error('伺服器錯誤');
     statusEl.style.color = '#2a7a4a';
-    statusEl.textContent = `✅ 訂閱成功！有排班時會在${dayLabel} ${notifyHour} 通知你`;
+    statusEl.textContent = `✅ 訂閱成功！有排班時會在${dayLabel} ${notifyHour} 通知你` + (sameday ? '，服事當天也會提醒' : '');
     btn.textContent = '已訂閱 ✓';
     btn.style.background = '#2a7a4a';
     refreshPushButtons();
