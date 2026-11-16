@@ -2,19 +2,14 @@
 	"siteId": "9c317e33-cfd6-4baa-a086-a53a24cff6e2",
 	"geolocation": {
 		"data": {
-			"city": "New Taipei City",
 			"country": {
 				"code": "TW",
 				"name": "Taiwan"
 			},
-			"subdivision": {
-				"code": "NWT",
-				"name": "New Taipei City"
-			},
 			"timezone": "Asia/Taipei",
-			"latitude": 25.0693,
-			"longitude": 121.4626
+			"latitude": 24,
+			"longitude": 121
 		},
-		"timestamp": 1793714030240
+		"timestamp": 1794839850938
 	}
 }

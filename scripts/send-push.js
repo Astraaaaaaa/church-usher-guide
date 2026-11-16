@@ -306,8 +306,8 @@ async function runPrayer(subs) {
 
   // B. 當天提醒：週一 18:00，發給所有有訂閱的同工
   const t = getTaipeiNow();
-  // MODE=prayer 表示 cron-job.org 專門在週一 18:00 觸發，直接 bypass 時間檢查
-  // MODE=all 由 GitHub Actions 每小時跑，需確認實際是 18:00
+  // MODE=prayer = cron-job.org 專在週一 18:00 觸發，bypass 時間
+  // 其他情況（MODE=all，GitHub Actions）確認實際是台北 18:00
   const isMondayEvening = weekday === 1 && (MODE === 'prayer' || (parseInt(t.hour) === 18 && parseInt(t.minute) <= 30));
   if (!isMondayEvening) { console.log('  （現在不是週一 18:00，略過當天提醒）'); return; }
 

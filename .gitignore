@@ -6,3 +6,6 @@ scripts/package-lock.json
 netlify/functions/package-lock.json
 .preview_subscriptions.json
 .preview_views_count
+
+# Local Netlify folder
+.netlify
