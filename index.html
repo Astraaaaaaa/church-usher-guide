@@ -87,6 +87,7 @@
   .pos-tab-btn:not(.active):hover { background:var(--sky-pale); }
   .pos-panel { display:none; padding:0 20px 20px; }
   .pos-panel.active { display:block; }
+  .pos-panel-inner { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
 
   /* ── NAV ── */
   .nav-wrapper {
@@ -1517,7 +1518,7 @@ function renderServiceSection(rows, svcId) {
         body += advanced.map(renderRule).join('\n') + '</div>';
       }
 
-      html += `<div class="pos-panel${idx===0?' active':''}" data-svc="${svcId}" data-idx="${idx}">${body}</div>`;
+      html += `<div class="pos-panel${idx===0?' active':''}" data-svc="${svcId}" data-idx="${idx}"><div class="pos-panel-inner">${body}</div></div>`;
     });
   }
 
