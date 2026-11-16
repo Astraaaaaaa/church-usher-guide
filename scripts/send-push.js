@@ -234,7 +234,7 @@ async function runSunday(subs) {
     for (const [name, entries] of groups) {
       // 勾選當天提醒、且這個時段沒有被上面的主日提醒發過（避免同一小時收兩則）
       const rSubs = (subMap[name] || []).filter(s =>
-        (s.remindBeforeService === true || s.remindBeforeService === '1') &&
+        hasSameday(s.notifyTime) &&
         (isManual || !shouldNotifyNow(s.notifyTime)));
       if (!rSubs.length) continue;
 
