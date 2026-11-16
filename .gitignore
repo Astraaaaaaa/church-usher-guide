@@ -9,3 +9,7 @@ netlify/functions/package-lock.json
 
 # Local Netlify folder
 .netlify
+
+# CRITICAL: Never commit secrets
+.env
+.env.*
