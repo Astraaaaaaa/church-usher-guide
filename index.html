@@ -80,6 +80,14 @@
   .svc-toggle-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
   .svc-toggle-btn:not(.active):hover { background:var(--sky-pale); }
 
+  /* ── Position Tab Buttons ── */
+  .pos-tabs { display:flex; flex-wrap:wrap; gap:6px; padding:0 20px 14px; }
+  .pos-tab-btn { padding:6px 12px; border-radius:20px; border:1px solid var(--border); background:var(--white); color:var(--text-mid); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s,color .15s,border-color .15s; white-space:nowrap; }
+  .pos-tab-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .pos-tab-btn:not(.active):hover { background:var(--sky-pale); }
+  .pos-panel { display:none; padding:0 20px 20px; }
+  .pos-panel.active { display:block; }
+
   /* ── NAV ── */
   .nav-wrapper {
     background: var(--navy);
