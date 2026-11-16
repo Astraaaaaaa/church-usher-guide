@@ -1317,6 +1317,7 @@ async function loadRoster() {
     rForceRefresh = false;
     // Build prayer map: { 'M/DD': ['name1', 'name2'] }
     _prayerMap = {};
+    console.log('[禱告會] rows:', prayerRows.length, prayerRows.slice(0,3));
     const DTRE = /^(\d{1,2})\/(\d{2})$/;
     for (const row of prayerRows) {
       const d = rCellVal(row[0]);
@@ -1324,6 +1325,7 @@ async function loadRoster() {
       const names = row.slice(1).map(v => (v || '').trim()).filter(Boolean);
       if (names.length) _prayerMap[d] = names;
     }
+    console.log('[禱告會] map:', _prayerMap);
     rRender(rows);
   } catch(e) {
     document.getElementById('r-kanban').innerHTML =
@@ -1574,7 +1576,7 @@ window.showReactionResults = function(counts, votedEmoji) {
 (function checkAnnouncementPopup() {
   // ★ 時間設定：確認後填入，格式 [年, 月, 日起] [年, 月, 日止]
   const FROM = [2026, 10, 26];
-  const TO   = [2026, 11, 25];
+  const TO   = [2026, 11, 15];
   if (!FROM || !TO) return; // 尚未啟用
   const now = new Date();
   const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
