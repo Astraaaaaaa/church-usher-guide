@@ -211,10 +211,10 @@
     transition: background 0.12s;
   }
   .rule-item:hover { background: var(--warm-gray); }
-  .rule-inner { border-left-color: transparent; }
-  .rule-outer { border-left-color: transparent; }
-  .rule-lift  { border-left-color: transparent; }
-  .rule-elev  { border-left-color: transparent; }
+  .rule-inner { }
+  .rule-outer { }
+  .rule-lift  { }
+  .rule-elev  { }
   .rule-n { font-size: 13px; color: var(--text-soft); padding-top: 3px; text-align: right; flex-shrink: 0; }
   .alert-rule {
     background: #FFF2F1;
@@ -796,7 +796,14 @@ function switchService(svcId, scroll) {
 }
 function switchPos(svcId, idx) {
   const container = document.getElementById(svcId + '-dyn');
-  container.querySelectorAll('.pos-tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === idx));
+  container.querySelectorAll('.pos-tab-btn').forEach((btn, i) => {
+    const isActive = i === idx;
+    btn.classList.toggle('active', isActive);
+    const accent = btn.dataset.accent || '';
+    btn.style.background   = isActive ? accent : '';
+    btn.style.borderColor  = isActive ? accent : '';
+    btn.style.color        = isActive ? '#fff'  : '';
+  });
   container.querySelectorAll('.pos-panel').forEach((panel, i) => panel.classList.toggle('active', i === idx));
 }
 function toggleBlock(id) {
@@ -1431,11 +1438,11 @@ async function loadQuickRef() {
 loadRoster();
 // ── Service Sections (first / second) ────────────────────────────────────────
 const SVC_META = {
-  '🙏': { ruleClass:'rule-inner', badgeClass:'badge-inner', badgeText:'堂內帶位', tabLabel:'內招' },
-  '🚪': { ruleClass:'rule-outer', badgeClass:'badge-outer', badgeText:'門口迎賓', tabLabel:'外招' },
-  '🛗': { ruleClass:'rule-lift',  badgeClass:'badge-lift',  badgeText:'電梯協調', tabLabel:'一樓前電梯招待' },
-  '⬆️':{ ruleClass:'rule-elev',  badgeClass:'badge-elev',  badgeText:'樓層引導', tabLabel:'電梯招待' },
-  'default': { ruleClass:'', badgeClass:'', badgeText:'', tabLabel:'' },
+  '🙏': { ruleClass:'rule-inner', badgeClass:'badge-inner', badgeText:'堂內帶位', tabLabel:'內招',         accent:'#1A6B46', panelBg:'rgba(45,155,106,0.07)',  borderCol:'rgba(45,155,106,0.35)' },
+  '🚪': { ruleClass:'rule-outer', badgeClass:'badge-outer', badgeText:'門口迎賓', tabLabel:'外招',         accent:'#2B5280', panelBg:'rgba(91,155,213,0.09)',  borderCol:'rgba(91,155,213,0.4)'  },
+  '🛗': { ruleClass:'rule-lift',  badgeClass:'badge-lift',  badgeText:'電梯協調', tabLabel:'一樓前電梯招待', accent:'#7A5610', panelBg:'rgba(200,151,58,0.08)', borderCol:'rgba(200,151,58,0.4)'  },
+  '⬆️':{ ruleClass:'rule-elev',  badgeClass:'badge-elev',  badgeText:'樓層引導', tabLabel:'電梯招待',     accent:'#5B2880', panelBg:'rgba(123,94,167,0.08)', borderCol:'rgba(123,94,167,0.35)' },
+  'default': { ruleClass:'', badgeClass:'', badgeText:'', tabLabel:'', accent:'var(--navy)', panelBg:'var(--white)', borderCol:'var(--border)' },
 };
 const SVC_BADGE = {
   first:  '<span class="service-badge badge-s1">第一堂</span>',
@@ -1488,7 +1495,8 @@ function renderServiceSection(rows, svcId) {
       const emoji = emojiMatch ? emojiMatch[1] : null;
       const meta = (emoji && SVC_META[emoji]) || SVC_META['default'];
       const label = meta.tabLabel || meta.badgeText || pos;
-      html += `<button class="pos-tab-btn${idx===0?' active':''}" onclick="switchPos('${svcId}',${idx})">${label}</button>`;
+      const activeStyle = idx===0 ? `style="background:${meta.accent};border-color:${meta.accent};color:#fff"` : '';
+      html += `<button class="pos-tab-btn${idx===0?' active':''}" data-accent="${meta.accent}" onclick="switchPos('${svcId}',${idx})" ${activeStyle}>${label}</button>`;
     });
     html += '</div>';
 
@@ -1502,7 +1510,8 @@ function renderServiceSection(rows, svcId) {
       const renderRule = (r) => {
         const isAlert = r[1] === 'alert';
         const cls = isAlert ? 'alert-rule' : meta.ruleClass;
-        const style = isAlert ? ' style="margin-top:10px;"' : '';
+        const borderStyle = isAlert ? '' : `border-left-color:${meta.borderCol};`;
+        const style = ` style="${borderStyle}${isAlert ? 'margin-top:10px;' : ''}"`;
         return `<div class="rule-item ${cls}"${style}><span class="rule-n">${r[2]}</span><div style="min-width:0;">${boldify(r[3])}</div></div>`;
       };
 
@@ -1518,7 +1527,7 @@ function renderServiceSection(rows, svcId) {
         body += advanced.map(renderRule).join('\n') + '</div>';
       }
 
-      html += `<div class="pos-panel${idx===0?' active':''}" data-svc="${svcId}" data-idx="${idx}"><div class="pos-panel-inner">${body}</div></div>`;
+      html += `<div class="pos-panel${idx===0?' active':''}" data-svc="${svcId}" data-idx="${idx}"><div class="pos-panel-inner" style="background:${meta.panelBg};border-color:${meta.borderCol}">${body}</div></div>`;
     });
   }
 
