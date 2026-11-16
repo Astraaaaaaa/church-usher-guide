@@ -299,8 +299,8 @@ async function runPrayer(subs) {
         });
         if (!dueSubs.length) { console.log(`  ⏭  ${worker}（無訂閱或不在通知時段）`); continue; }
 
-        const body = `${firstName(norm(worker))} 平安！ ${mmdd(nextMon)}（一）禱告會 ⏰ ${pTime}\n記得準時到四樓、到了可以直接發禱告單 ✨`;
-        const payload = JSON.stringify({ title: '🙏 禱告會招待提醒', body, url: '/' });
+        const body = `${firstName(norm(worker))}平安！${mmdd(nextMon)} ${pTime} 禱告會招待，謝謝！`;
+        const payload = JSON.stringify({ title: '禱告會招待提醒', body, url: '/' });
         for (const sub of dueSubs) await pushTo(sub, payload, `[禱告會提前] ${worker}`);
       }
     }
@@ -325,8 +325,8 @@ async function runPrayer(subs) {
   for (const worker of workers) {
     const ms = matchSubs(worker);
     if (!ms.length) { console.log(`  ⏭  ${worker}（無訂閱）`); continue; }
-    const body = `${firstName(norm(worker))} 平安！ 記得${pTime}到四樓發禱告單給大家 ✨\n別忘了在記事本回報人數，謝謝！`;
-    const payload = JSON.stringify({ title: '🙏 禱告會招待提醒', body, url: '/' });
+    const body = `${firstName(norm(worker))}平安！今天 ${pTime} 前請到四樓協助發禱告單，20:10記得算人數，謝謝！`;
+    const payload = JSON.stringify({ title: '禱告會招待提醒', body, url: '/' });
     for (const sub of ms) await pushTo(sub, payload, `[禱告會當天] ${worker}`);
   }
 }
