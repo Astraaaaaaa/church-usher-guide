@@ -934,7 +934,9 @@ function rFilterCards(q) {
     card.style.display = show ? '' : 'none';
     if (show) {
       matched++;
-      if (term) card.querySelectorAll('.r-ppl').forEach(el => rHighlightEl(el, term));
+      if (term) {
+        card.querySelectorAll('.r-ppl, .r-prayer-names').forEach(el => rHighlightEl(el, term));
+      }
     }
   });
 
@@ -1218,7 +1220,7 @@ function rRender(rows) {
       if (prayerNames?.length) {
         const lightBg = hexToRgba(color, 0.1);
         html += `<div class="r-prayer" style="background:${lightBg}">
-          <div class="r-prayer-lbl" style="color:${color}">🙏 禱告會（18:50）</div>
+          <div class="r-prayer-lbl" style="color:${color}">${label} 禱告會（18:50）</div>
           <div class="r-prayer-names">${prayerNames.join('、')}</div>
         </div>`;
       }
