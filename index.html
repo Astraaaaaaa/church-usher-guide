@@ -1317,28 +1317,32 @@ async function loadRoster() {
         .then(r => r.ok ? r.json() : []).catch(() => []),
     ]);
     rForceRefresh = false;
-    // Build prayer map: key → { date: 'M/DD', names: [...] }
-    // 存 UTC 日期和本地日期兩個 key，確保不同時區環境下都能比對到 roster card label
+    // Build prayer map: { 'M/DD' Sunday key → { date: 'MMDD', names } }
+    // Sheet 的禱告會日期是星期一，對應前一天的 Sunday roster card
     _prayerMap = {};
-    const DTRE = /^(\d{1,2})\/(\d{2})$/;
     for (const row of prayerRows) {
       const raw = row[0];
-      let utcDate, localDate;
+      if (!raw) continue;
+      let mo, da;
       if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(raw)) {
+        // ISO string（GAS Date cell）→ 用本地時區取禱告會日
         const dt = new Date(raw);
-        // UTC 日期 = sheet 裡填入的日期（GAS 以台灣時區 midnight=UTC T16 序列化）
-        utcDate   = `${dt.getUTCMonth()+1}/${String(dt.getUTCDate()).padStart(2,'0')}`;
-        // 本地日期備用（+1 天可能性）
-        localDate = `${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`;
+        mo = dt.getMonth() + 1; da = dt.getDate();
       } else {
-        utcDate = localDate = rCellVal(raw);
+        // 文字格式 2026/11/23 或 2026-11-23
+        const m = String(raw).match(/\d{4}[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (!m) continue;
+        mo = parseInt(m[1]); da = parseInt(m[2]);
       }
-      if (!utcDate || !DTRE.test(utcDate)) continue;
+      if (!mo || !da) continue;
       const names = row.slice(1).map(v => (v || '').trim()).filter(Boolean);
       if (!names.length) continue;
-      const entry = { date: utcDate, names }; // date = 顯示用（來自 sheet）
-      _prayerMap[utcDate] = entry;
-      if (localDate !== utcDate) _prayerMap[localDate] = entry; // 多存一個 key 以防萬一
+      // 顯示：禱告會日 MMDD
+      const displayDate = `${String(mo).padStart(2,'0')}${String(da).padStart(2,'0')}`;
+      // key：前一天 Sunday（禱告會在星期一，對應前一天的主日 card）
+      const sun = new Date(R_YEAR, mo - 1, da - 1);
+      const sunKey = `${sun.getMonth()+1}/${String(sun.getDate()).padStart(2,'0')}`;
+      _prayerMap[sunKey] = { date: displayDate, names };
     }
     rRender(rows);
   } catch(e) {
