@@ -1338,7 +1338,7 @@ async function loadRoster() {
       const names = row.slice(1).map(v => (v || '').trim()).filter(Boolean);
       if (!names.length) continue;
       // 顯示：禱告會日 MMDD
-      const displayDate = `${String(mo).padStart(2,'0')}${String(da).padStart(2,'0')}`;
+      const displayDate = `${String(mo).padStart(2,'0')}/${String(da).padStart(2,'0')}`;
       // key：前一天 Sunday（禱告會在星期一，對應前一天的主日 card）
       const sun = new Date(R_YEAR, mo - 1, da - 1);
       const sunKey = `${sun.getMonth()+1}/${String(sun.getDate()).padStart(2,'0')}`;
