@@ -442,13 +442,11 @@
       <label style="font-size:13px;color:#3D546B;font-weight:600;display:block;margin-bottom:6px;">選擇你的名字</label>
       <div style="position:relative;">
         <input id="subscribe-name-input" type="text" placeholder="輸入名字搜尋…" autocomplete="off"
-          style="width:100%;padding:10px 36px 10px 12px;border:1px solid #D8E2EC;border-top-left-radius:10px;border-top-right-radius:10px;border-bottom:none;font-size:14px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;box-sizing:border-box;"
-          oninput="filterNameList(this.value)" />
+          style="width:100%;padding:10px 36px 10px 12px;border:1px solid #D8E2EC;border-radius:10px;font-size:14px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;box-sizing:border-box;"
+          oninput="filterNameList(this.value)" oncompositionend="filterNameList(this.value)" />
         <span id="name-check-icon" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#1A3A5C;font-size:17px;pointer-events:none;font-weight:700;">✓</span>
       </div>
-      <div id="name-dropdown" style="border:1px solid #D8E2EC;border-bottom-left-radius:10px;border-bottom-right-radius:10px;max-height:140px;overflow-y:auto;background:#fff;">
-        <div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">載入中…</div>
-      </div>
+      <div id="name-dropdown" style="display:none;border:1px solid #D8E2EC;border-top:none;border-bottom-left-radius:10px;border-bottom-right-radius:10px;max-height:140px;overflow-y:auto;background:#fff;"></div>
       <input type="hidden" id="subscribe-name" value="" />
     </div>
     <div style="margin-bottom:14px;">
@@ -1642,7 +1640,20 @@ window.doUnsubscribe = async function() {
 };
 
 var _nameList = [];
-var _subscribedState = null; // { name, days, time, sameday } 訂閱後儲存
+var _subscribedState = null;
+
+function showNameDropdown() {
+  const inp = document.getElementById('subscribe-name-input');
+  inp.style.borderBottomLeftRadius = '0';
+  inp.style.borderBottomRightRadius = '0';
+  document.getElementById('name-dropdown').style.display = '';
+}
+function hideNameDropdown() {
+  const inp = document.getElementById('subscribe-name-input');
+  inp.style.borderBottomLeftRadius = '10px';
+  inp.style.borderBottomRightRadius = '10px';
+  document.getElementById('name-dropdown').style.display = 'none';
+} // { name, days, time, sameday } 訂閱後儲存
 
 function checkSubscribeChanges() {
   if (!_subscribedState) return;
@@ -1701,8 +1712,8 @@ window.openSubscribeModal = async function() {
   document.getElementById('subscribe-name').value = '';
   document.getElementById('subscribe-name-input').value = '';
   document.getElementById('name-check-icon').style.display = 'none';
-  document.getElementById('name-dropdown').style.display = '';
-  document.getElementById('name-dropdown').innerHTML = '<div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">載入中…</div>';
+  hideNameDropdown();
+  document.getElementById('name-dropdown').innerHTML = '';
   document.getElementById('subscribe-cancel-row').style.display = 'none';
   _subscribedState = null;
   const btn = document.getElementById('subscribe-confirm-btn');
@@ -1734,7 +1745,7 @@ window.openSubscribeModal = async function() {
       document.getElementById('subscribe-name').value = saved.name;
       document.getElementById('subscribe-name-input').value = saved.name;
       document.getElementById('name-check-icon').style.display = '';
-      document.getElementById('name-dropdown').style.display = 'none';
+      hideNameDropdown();
     }
     // 帶入時間設定
     if (saved.days) document.getElementById('subscribe-days').value = saved.days;
@@ -1757,7 +1768,8 @@ window.openSubscribeModal = async function() {
 window.filterNameList = function(q) {
   document.getElementById('subscribe-name').value = '';
   document.getElementById('name-check-icon').style.display = 'none';
-  document.getElementById('name-dropdown').style.display = '';
+  if (!q || !q.trim()) { hideNameDropdown(); checkSubscribeChanges(); return; }
+  showNameDropdown();
   renderNameList(q);
   checkSubscribeChanges();
 };
@@ -1766,7 +1778,7 @@ window.selectName = function(name) {
   document.getElementById('subscribe-name').value = name;
   document.getElementById('subscribe-name-input').value = name;
   document.getElementById('name-check-icon').style.display = '';
-  document.getElementById('name-dropdown').style.display = 'none';
+  hideNameDropdown();
   checkSubscribeChanges();
 };
 
@@ -1801,8 +1813,7 @@ window.doCancelSubscription = async function() {
     document.getElementById('subscribe-name').value = '';
     document.getElementById('subscribe-name-input').value = '';
     document.getElementById('name-check-icon').style.display = 'none';
-    document.getElementById('name-dropdown').style.display = '';
-    renderNameList('');
+    hideNameDropdown();
     refreshPushButtons();
   } catch(e) {
     statusEl.style.color = '#e57373';
