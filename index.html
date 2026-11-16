@@ -1454,16 +1454,19 @@ function renderServiceSection(rows, svcId) {
   const lastCell = (r) => { for (let i = r.length-1; i >= 0; i--) if (r[i]?.trim()) return r[i]; return ''; };
 
   const chips = rows.filter(r => r[0]?.trim() === '_info' && r[1]?.trim() === 'chip');
-  if (chips.length) {
-    html += '<div class="info-row">' +
-      chips.map(r => `<div class="info-chip chip-${svcId === 'first' ? 'navy' : 'sky'}">${lastCell(r)}</div>`).join('') +
-      '</div>';
-  }
-
-  // Note box
   const note = rows.find(r => r[0]?.trim() === '_info' && r[1]?.trim() === 'note');
-  if (note) {
-    html += `<div class="note-box"><strong>集合流程：</strong>${boldify(lastCell(note))}</div>`;
+
+  if (chips.length || note) {
+    html += '<div style="padding:0 20px 4px">';
+    if (chips.length) {
+      html += '<div class="info-row">' +
+        chips.map(r => `<div class="info-chip chip-${svcId === 'first' ? 'navy' : 'sky'}">${lastCell(r)}</div>`).join('') +
+        '</div>';
+    }
+    if (note) {
+      html += `<div class="note-box"><strong>集合流程：</strong>${boldify(lastCell(note))}</div>`;
+    }
+    html += '</div>';
   }
 
   // Group service blocks by position
