@@ -771,8 +771,19 @@ function showTab(id, btn) {
   if (id === 'roster') loadRoster();
   if (id === 'principles') loadPrinciples();
   if (id === 'quickref') loadQuickRef();
-  if (id === 'first') loadService('first');
-  if (id === 'second') loadService('second');
+  if (id === 'service') {
+    // 預設顯示第一堂；保持上次切換的狀態
+    const active = document.querySelector('.svc-toggle-btn.active');
+    const cur = active ? (active.id === 'svc-btn-second' ? 'second' : 'first') : 'first';
+    switchService(cur, false);
+  }
+}
+function switchService(svcId, scroll) {
+  ['first','second'].forEach(id => {
+    document.getElementById(id+'-dyn').style.display = id === svcId ? '' : 'none';
+    document.getElementById('svc-btn-'+id).classList.toggle('active', id === svcId);
+  });
+  loadService(svcId);
 }
 function toggleBlock(id) {
   document.getElementById(id).classList.toggle('open');
