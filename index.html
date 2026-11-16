@@ -1430,11 +1430,11 @@ async function loadQuickRef() {
 loadRoster();
 // ── Service Sections (first / second) ────────────────────────────────────────
 const SVC_META = {
-  '🙏': { ruleClass:'rule-inner', badgeClass:'badge-inner', badgeText:'堂內帶位' },
-  '🚪': { ruleClass:'rule-outer', badgeClass:'badge-outer', badgeText:'門口迎賓' },
-  '🛗': { ruleClass:'rule-lift',  badgeClass:'badge-lift',  badgeText:'電梯協調' },
-  '⬆️':{ ruleClass:'rule-elev',  badgeClass:'badge-elev',  badgeText:'樓層引導' },
-  'default': { ruleClass:'', badgeClass:'', badgeText:'' },
+  '🙏': { ruleClass:'rule-inner', badgeClass:'badge-inner', badgeText:'堂內帶位', tabLabel:'內招' },
+  '🚪': { ruleClass:'rule-outer', badgeClass:'badge-outer', badgeText:'門口迎賓', tabLabel:'外招' },
+  '🛗': { ruleClass:'rule-lift',  badgeClass:'badge-lift',  badgeText:'電梯協調', tabLabel:'一樓前電梯招待' },
+  '⬆️':{ ruleClass:'rule-elev',  badgeClass:'badge-elev',  badgeText:'樓層引導', tabLabel:'電梯招待' },
+  'default': { ruleClass:'', badgeClass:'', badgeText:'', tabLabel:'' },
 };
 const SVC_BADGE = {
   first:  '<span class="service-badge badge-s1">第一堂</span>',
@@ -1486,8 +1486,8 @@ function renderServiceSection(rows, svcId) {
       const emojiMatch = pos.match(/^([\S\u{1F300}-\u{1FFFF}]+)/u);
       const emoji = emojiMatch ? emojiMatch[1] : null;
       const meta = (emoji && SVC_META[emoji]) || SVC_META['default'];
-      const label = `<span class="service-badge ${meta.badgeClass}" style="font-size:11px;padding:2px 7px;">${meta.badgeText}</span>`;
-      html += `<button class="pos-tab-btn${idx===0?' active':''}" onclick="switchPos('${svcId}',${idx})">${emoji||''} ${label}</button>`;
+      const label = meta.tabLabel || meta.badgeText || pos;
+      html += `<button class="pos-tab-btn${idx===0?' active':''}" onclick="switchPos('${svcId}',${idx})">${label}</button>`;
     });
     html += '</div>';
 
