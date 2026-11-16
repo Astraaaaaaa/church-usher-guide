@@ -40,7 +40,7 @@ async function sendConfirmPush(subscription, name, notifyTime, isUpdate) {
       url: '/',
     } : {
       title: '🔔 訂閱成功',
-      body: `${gn} 平安！${label} 有排班時會提前通知你 ✨`,
+      body: `${gn} 平安！${label} 有排班時會提前通知你` + (hasSameday ? '，服事當天也會提醒 ✨' : ' ✨'),
       url: '/',
     });
     await webpush.sendNotification(subscription, payload);
