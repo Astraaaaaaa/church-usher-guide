@@ -440,9 +440,12 @@
     </div>
     <div style="margin-bottom:12px;">
       <label style="font-size:13px;color:#3D546B;font-weight:600;display:block;margin-bottom:6px;">選擇你的名字</label>
-      <input id="subscribe-name-input" type="text" placeholder="輸入名字搜尋…" autocomplete="off"
-        style="width:100%;padding:10px 12px;border:1px solid #D8E2EC;border-top-left-radius:10px;border-top-right-radius:10px;border-bottom:none;font-size:14px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;box-sizing:border-box;"
-        oninput="filterNameList(this.value)" />
+      <div style="position:relative;">
+        <input id="subscribe-name-input" type="text" placeholder="輸入名字搜尋…" autocomplete="off"
+          style="width:100%;padding:10px 36px 10px 12px;border:1px solid #D8E2EC;border-top-left-radius:10px;border-top-right-radius:10px;border-bottom:none;font-size:14px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;box-sizing:border-box;"
+          oninput="filterNameList(this.value)" />
+        <span id="name-check-icon" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#1A3A5C;font-size:17px;pointer-events:none;font-weight:700;">✓</span>
+      </div>
       <div id="name-dropdown" style="border:1px solid #D8E2EC;border-bottom-left-radius:10px;border-bottom-right-radius:10px;max-height:140px;overflow-y:auto;background:#fff;">
         <div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">載入中…</div>
       </div>
@@ -451,12 +454,12 @@
     <div style="margin-bottom:14px;">
       <label style="font-size:13px;color:#3D546B;font-weight:600;display:block;margin-bottom:6px;">提醒時間</label>
       <div style="display:flex;gap:8px;">
-        <select id="subscribe-days" style="flex:1;padding:10px 8px;border:1px solid #D8E2EC;border-radius:10px;font-size:13px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;">
+        <select id="subscribe-days" onchange="checkSubscribeChanges()" style="flex:1;padding:10px 8px;border:1px solid #D8E2EC;border-radius:10px;font-size:13px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;">
           <option value="1">週六（前1天）</option>
           <option value="2" selected>週五（前2天）</option>
           <option value="3">週四（前3天）</option>
         </select>
-        <select id="subscribe-time" style="flex:1;padding:10px 8px;border:1px solid #D8E2EC;border-radius:10px;font-size:13px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;">
+        <select id="subscribe-time" onchange="checkSubscribeChanges()" style="flex:1;padding:10px 8px;border:1px solid #D8E2EC;border-radius:10px;font-size:13px;color:#1A3A5C;font-family:inherit;outline:none;background:#F7F9FB;">
           <option value="07:00">07:00</option>
           <option value="08:00">08:00</option>
           <option value="09:00">09:00</option>
@@ -476,7 +479,7 @@
       </div>
     </div>
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#3D546B;margin-bottom:14px;cursor:pointer;">
-      <input type="checkbox" id="subscribe-sameday" style="width:16px;height:16px;accent-color:#1A3A5C;cursor:pointer;">
+      <input type="checkbox" id="subscribe-sameday" onchange="checkSubscribeChanges()" style="width:16px;height:16px;accent-color:#1A3A5C;cursor:pointer;">
       服事當天也提醒我
     </label>
     <button onclick="doSubscribe()" id="subscribe-confirm-btn" style="width:100%;background:#1A3A5C;color:#fff;border:none;border-radius:20px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">確認訂閱</button>
@@ -1636,8 +1639,38 @@ window.doUnsubscribe = async function() {
 };
 
 var _nameList = [];
+var _subscribedState = null; // { name, days, time, sameday } 訂閱後儲存
 
-var _nameList = [];
+function checkSubscribeChanges() {
+  if (!_subscribedState) return;
+  const name    = document.getElementById('subscribe-name').value;
+  const days    = document.getElementById('subscribe-days').value;
+  const time    = document.getElementById('subscribe-time').value;
+  const sameday = document.getElementById('subscribe-sameday').checked;
+  const btn     = document.getElementById('subscribe-confirm-btn');
+  const statusEl= document.getElementById('subscribe-status');
+
+  const changed = name !== _subscribedState.name ||
+                  days !== _subscribedState.days ||
+                  time !== _subscribedState.time ||
+                  sameday !== _subscribedState.sameday;
+
+  if (changed) {
+    btn.textContent = '確認更新';
+    btn.style.background = '#1A3A5C';
+    btn.style.opacity = '1';
+    btn.disabled = false;
+    statusEl.textContent = '設定有變更，按確認更新儲存';
+    statusEl.style.color = '#7A8E9E';
+  } else {
+    btn.textContent = '已訂閱 ✓';
+    btn.style.background = '#2a7a4a';
+    btn.disabled = true;
+    const dayLabel = {'1':'週六','2':'週五','3':'週四'}[_subscribedState.days] || '';
+    statusEl.style.color = '#2a7a4a';
+    statusEl.textContent = `✅ 有排班時會在${dayLabel} ${_subscribedState.time} 通知你` + (_subscribedState.sameday ? '，服事當天也會提醒' : '');
+  }
+}
 
 function renderNameList(q) {
   const dd = document.getElementById('name-dropdown');
@@ -1664,7 +1697,13 @@ window.openSubscribeModal = async function() {
   document.getElementById('subscribe-modal').style.display = 'flex';
   document.getElementById('subscribe-name').value = '';
   document.getElementById('subscribe-name-input').value = '';
+  document.getElementById('name-check-icon').style.display = 'none';
+  document.getElementById('name-dropdown').style.display = '';
   document.getElementById('name-dropdown').innerHTML = '<div style="padding:10px 12px;font-size:13px;color:#7A8E9E;">載入中…</div>';
+  _subscribedState = null;
+  const btn = document.getElementById('subscribe-confirm-btn');
+  btn.textContent = '確認訂閱'; btn.style.background = '#1A3A5C'; btn.disabled = false;
+  document.getElementById('subscribe-status').textContent = '';
   _nameList = [];
   try {
     const res = await fetch('/.netlify/functions/subscribe?action=names');
@@ -1679,13 +1718,18 @@ window.openSubscribeModal = async function() {
 
 window.filterNameList = function(q) {
   document.getElementById('subscribe-name').value = '';
+  document.getElementById('name-check-icon').style.display = 'none';
+  document.getElementById('name-dropdown').style.display = '';
   renderNameList(q);
+  checkSubscribeChanges();
 };
 
 window.selectName = function(name) {
   document.getElementById('subscribe-name').value = name;
   document.getElementById('subscribe-name-input').value = name;
-  renderNameList(document.getElementById('subscribe-name-input').value);
+  document.getElementById('name-check-icon').style.display = '';
+  document.getElementById('name-dropdown').style.display = 'none';
+  checkSubscribeChanges();
 };
 
 window.closeSubscribeModal = function() {
@@ -1732,12 +1776,14 @@ window.doSubscribe = async function() {
     });
 
     if (!res.ok) throw new Error('伺服器錯誤');
+    const isUpdate = !!_subscribedState;
+    _subscribedState = { name, days: notifyDays, time: notifyHour, sameday };
     statusEl.style.color = '#2a7a4a';
-    statusEl.textContent = `✅ 訂閱成功！有排班時會在${dayLabel} ${notifyHour} 通知你` + (sameday ? '，服事當天也會提醒' : '');
-    btn.textContent = '已訂閱 ✓';
+    statusEl.textContent = `✅ ${isUpdate ? '已更新！' : '訂閱成功！'}有排班時會在${dayLabel} ${notifyHour} 通知你` + (sameday ? '，服事當天也會提醒' : '');
+    btn.textContent = isUpdate ? '已更新 ✓' : '已訂閱 ✓';
     btn.style.background = '#2a7a4a';
+    btn.disabled = true;
     refreshPushButtons();
-    setTimeout(closeSubscribeModal, 2500);
   } catch (err) {
     statusEl.style.color = '#e57373';
     statusEl.textContent = '訂閱失敗：' + err.message;
