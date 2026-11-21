@@ -10,8 +10,20 @@ const webpush = require('web-push');
 const path = require('path');
 const fs = require('fs');
 
-const VAPID_PUBLIC  = 'BMq--hmPMeP0olt0PeCDw0yEl4T-dePrA5Kt_f2o_0hWRpM-5xj1d38L9_zQ6Wz9_Cojkvyee4SOgK4S5QYPKB4';
-const VAPID_PRIVATE = 'xpPsV-cYY58z_eeq61KFWU0mpUw9d0hmVIniN3NNQYs';
+// 從 .env 載入 VAPID 金鑰（不可硬編碼到程式碼）
+const dotenvPath = path.join(__dirname, '..', '.env');
+if (require('fs').existsSync(dotenvPath)) {
+  require('fs').readFileSync(dotenvPath, 'utf8').split('\n').forEach(line => {
+    const [k, ...v] = line.split('=');
+    if (k && v.length) process.env[k.trim()] = v.join('=').trim();
+  });
+}
+const VAPID_PUBLIC  = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
+if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+  console.error('❌ 缺少 VAPID 金鑰，請確認 .env 有 VAPID_PUBLIC_KEY 和 VAPID_PRIVATE_KEY');
+  process.exit(1);
+}
 
 webpush.setVapidDetails('mailto:chiehastra@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
