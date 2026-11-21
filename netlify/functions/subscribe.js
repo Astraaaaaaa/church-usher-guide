@@ -44,8 +44,10 @@ async function sendConfirmPush(subscription, name, notifyTime, isUpdate) {
       url: '/',
     });
     await webpush.sendNotification(subscription, payload);
+    return null; // success
   } catch (e) {
     console.warn('confirm push 失敗（不影響訂閱）:', e.message);
+    return e.message; // DEBUG: 暫時回傳錯誤訊息
   }
 }
 
@@ -98,8 +100,8 @@ exports.handler = async function (event) {
       + '&auth='                + encodeURIComponent(subscription.keys.auth);
 
     await fetch(url, { redirect: 'follow' });
-    await sendConfirmPush(subscription, name, notifyTime, !!isUpdate);
-    return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true }) };
+    const pushErr = await sendConfirmPush(subscription, name, notifyTime, !!isUpdate);
+    return { statusCode: 200, headers: HEADERS, body: JSON.stringify({ ok: true, pushErr: pushErr || undefined }) };
   } catch (err) {
     return { statusCode: 500, headers: HEADERS, body: JSON.stringify({ error: err.message }) };
   }
