@@ -34,13 +34,12 @@ webpush.setVapidDetails('mailto:chiehastra@gmail.com', VAPID_PUBLIC, VAPID_PRIVA
 const MODE       = (process.env.MODE || '').trim() || 'all';
 const RUN_SUNDAY = MODE === 'sunday' || MODE === 'all';
 const RUN_PRAYER = MODE === 'prayer' || MODE === 'all';
-// 只有人工在 GitHub 按「Run workflow」才略過篩選；勾「照訂閱時間篩選」則不略過
-// workflow_dispatch = 手動觸發；repository_dispatch = cron-job.org 外部觸發
-// 兩者都視為「主動觸發」，bypass 時間視窗限制
-const isManual = (
-  process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' ||
-  process.env.GITHUB_EVENT_NAME === 'repository_dispatch'
-) && process.env.RESPECT_SCHEDULE !== 'true';
+// workflow_dispatch = 人工在 GitHub 按「Run workflow」→ 略過時間篩選，發給所有有排班者
+// repository_dispatch = cron-job.org 定時觸發 → 照各人訂閱時間設定篩選
+// RESPECT_SCHEDULE=true 可強制 workflow_dispatch 也照時間篩選（測試用）
+const isManual =
+  process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' &&
+  process.env.RESPECT_SCHEDULE !== 'true';
 
 const CAPTAIN_COLLECT = { '第一堂': '08:10', '第二堂': '10:10' };
 const CLOSING = '感謝您的擺上～主日見！';
@@ -134,6 +133,11 @@ async function pushTo(sub, payload, label) {
     return true;
   } catch (err) {
     console.error(`  ❌ ${label}：${err.message}`);
+    // 訂閱已失效（410 Gone / 404）→ 自動從 GAS 刪除
+    if (err.statusCode === 410 || err.statusCode === 404) {
+      console.log(`  🗑  ${label} 訂閱失效，自動刪除…`);
+      await fetch(`${GAS_URL}?action=unsubscribe&endpoint=${encodeURIComponent(sub.endpoint)}`, { redirect: 'follow' }).catch(() => {});
+    }
     return false;
   }
 }
