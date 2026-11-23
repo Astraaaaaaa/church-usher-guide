@@ -132,10 +132,10 @@ async function pushTo(sub, payload, label) {
     console.log(`  ✅ ${label}`);
     return true;
   } catch (err) {
-    console.error(`  ❌ ${label}：${err.message}`);
-    // 訂閱已失效（410 Gone / 404）→ 自動從 GAS 刪除
-    if (err.statusCode === 410 || err.statusCode === 404) {
-      console.log(`  🗑  ${label} 訂閱失效，自動刪除…`);
+    console.error(`  ❌ ${label}：${err.message}（HTTP ${err.statusCode ?? '?'}）`);
+    // 訂閱已失效或損壞 → 自動從 GAS 刪除，讓同工重新訂閱
+    if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode === 400) {
+      console.log(`  🗑  ${label} 訂閱失效（${err.statusCode}），自動刪除…`);
       await fetch(`${GAS_URL}?action=unsubscribe&endpoint=${encodeURIComponent(sub.endpoint)}`, { redirect: 'follow' }).catch(() => {});
     }
     return false;
