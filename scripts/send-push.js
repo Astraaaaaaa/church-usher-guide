@@ -17,7 +17,6 @@ if (!VAPID_PUBLIC || !VAPID_PRIVATE || !GAS_URL) {
 }
 
 webpush.setVapidDetails('mailto:chiehastra@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
-
 {
   const crypto = require('crypto');
   const FRONTEND_KEY = 'BO8Gv6RyZRiGnqgvX0Xy5afubq3wSrZDRgB8kH4gPRgEFJEkHbzpjohG_ldqyEu_EKsQLGOop_WX0oxgkdYHBak';
@@ -134,7 +133,8 @@ async function pushTo(sub, payload, label) {
     console.log(`  ✅ ${label}`);
     return true;
   } catch (err) {
-      console.log(`  ❌ 狀態碼=${err.statusCode} body=${err.body} host=${err.endpoint ? new URL(err.endpoint).host : '?'}`);    return false;
+    console.error(`  ❌ ${label}：${err.message}`);
+    return false;
   }
 }
 
