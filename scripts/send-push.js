@@ -120,7 +120,7 @@ async function pushTo(sub, payload, label) {
     console.log(`  ✅ ${label}`);
     return true;
   } catch (err) {
-    console.error(`  ❌ ${label}：${err.message}`);
+    console.log(`  ❌ ${name} → ${err.statusCode} ${err.body} @ ${new URL(err.endpoint).host}`);
     return false;
   }
 }
