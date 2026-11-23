@@ -18,6 +18,20 @@ if (!VAPID_PUBLIC || !VAPID_PRIVATE || !GAS_URL) {
 
 webpush.setVapidDetails('mailto:chiehastra@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
+{
+  const crypto = require('crypto');
+  const FRONTEND_KEY = 'BO8Gv6RyZRiGnqgvX0Xy5afubq3wSrZDRgB8kH4gPRgEFJEkHbzpjohG_ldqyEu_EKsQLGOop_WX0oxgkdYHBak';
+  let derived = '';
+  try {
+    const e = crypto.createECDH('prime256v1');
+    e.setPrivateKey(Buffer.from(VAPID_PRIVATE.trim(), 'base64url'));
+    derived = e.getPublicKey().toString('base64url');
+  } catch (err) { console.log('私鑰無法解析:', err.message); }
+  console.log('Secret公鑰==前端公鑰:', VAPID_PUBLIC.trim() === FRONTEND_KEY);
+  console.log('私鑰推算公鑰==前端公鑰:', derived === FRONTEND_KEY);
+  console.log('Secret含多餘空白:', VAPID_PUBLIC !== VAPID_PUBLIC.trim() || VAPID_PRIVATE !== VAPID_PRIVATE.trim());
+}
+
 const MODE       = (process.env.MODE || '').trim() || 'all';
 const RUN_SUNDAY = MODE === 'sunday' || MODE === 'all';
 const RUN_PRAYER = MODE === 'prayer' || MODE === 'all';

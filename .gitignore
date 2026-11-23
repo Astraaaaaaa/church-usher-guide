@@ -13,3 +13,4 @@ netlify/functions/package-lock.json
 # CRITICAL: Never commit secrets
 .env
 .env.*
+check-key.js
