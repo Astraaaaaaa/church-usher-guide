@@ -7,8 +7,8 @@
 
 const webpush = require('web-push');
 
-const VAPID_PUBLIC  = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
+const VAPID_PUBLIC  = (process.env.VAPID_PUBLIC_KEY  || '').trim();
+const VAPID_PRIVATE = (process.env.VAPID_PRIVATE_KEY || '').trim();
 const GAS_URL       = process.env.GAS_URL;
 
 if (!VAPID_PUBLIC || !VAPID_PRIVATE || !GAS_URL) {
