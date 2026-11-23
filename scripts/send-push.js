@@ -236,7 +236,7 @@ async function runSunday(subs) {
         `\n${CLOSING}`;
       title = `${dateLabel} 服事提醒`;
     }
-    const payload = JSON.stringify({ title, body, url: '/roster.html' });
+    const payload = JSON.stringify({ title, body, url: 'https://church-usher-guide.netlify.app/' });
 
     for (const sub of dueSubs) (await pushTo(sub, payload, `${name} → ${summary}`)) ? sent++ : failed++;
   }
@@ -317,7 +317,7 @@ async function runPrayer(subs) {
         if (!dueSubs.length) { console.log(`  ⏭  ${worker}（無訂閱或不在通知時段）`); continue; }
 
         const body = `${firstName(norm(worker))}平安！${mmdd(nextMon)} ${pTime} 禱告會招待，謝謝！`;
-        const payload = JSON.stringify({ title: '禱告會招待提醒', body, url: '/' });
+        const payload = JSON.stringify({ title: '禱告會招待提醒', body, url: 'https://church-usher-guide.netlify.app/' });
         for (const sub of dueSubs) await pushTo(sub, payload, `[禱告會提前] ${worker}`);
       }
     }
@@ -343,7 +343,7 @@ async function runPrayer(subs) {
     const ms = matchSubs(worker);
     if (!ms.length) { console.log(`  ⏭  ${worker}（無訂閱）`); continue; }
     const body = `${firstName(norm(worker))}平安！今天 ${pTime} 前請到四樓協助發禱告單，20:10記得算人數，謝謝！`;
-    const payload = JSON.stringify({ title: '禱告會招待提醒', body, url: '/' });
+    const payload = JSON.stringify({ title: '禱告會招待提醒', body, url: 'https://church-usher-guide.netlify.app/' });
     for (const sub of ms) await pushTo(sub, payload, `[禱告會當天] ${worker}`);
   }
 }
